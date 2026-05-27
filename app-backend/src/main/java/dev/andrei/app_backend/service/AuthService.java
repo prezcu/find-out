@@ -27,7 +27,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(String email, String rawPassword) {
-        String normalisedEmail = email.trim().toLowerCase();
+        String normalisedEmail = email.toLowerCase();
 
         if (userRepository.existsByEmail(normalisedEmail)) {
             throw new EmailAlreadyExistsException();

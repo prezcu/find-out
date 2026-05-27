@@ -13,23 +13,20 @@ import java.util.Map;
 public class AuthExceptionHandler {
 
     @ExceptionHandler(AuthService.EmailAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleEmailExists(
-            AuthService.EmailAlreadyExistsException e) {
+    public ResponseEntity<Map<String, String>> handleEmailExists() {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("error", "EMAIL_TAKEN"));
     }
 
     @ExceptionHandler(AuthService.InvalidCredentialsException.class)
-    public ResponseEntity<Map<String, String>> handleInvalidCredentials(
-            AuthService.InvalidCredentialsException e) {
-        // Same response for "no such email" and "wrong password" to prevent enumeration.
+    public ResponseEntity<Map<String, String>> handleInvalidCredentials() {
+        // same response for email or password for enumeration attack prevention
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "INVALID_CREDENTIALS"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidation(
-            MethodArgumentNotValidException e) {
+    public ResponseEntity<Map<String, String>> handleValidation() {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", "VALIDATION_FAILED"));
     }

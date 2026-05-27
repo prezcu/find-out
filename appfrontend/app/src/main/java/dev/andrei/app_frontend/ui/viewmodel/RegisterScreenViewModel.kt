@@ -53,6 +53,7 @@ class RegisterScreenViewModel @Inject constructor(
 
     private fun validate(state: RegisterFormState): String? {
         if (state.email.isBlank()) return "Email is required"
+        //TODO: Additional email validation
         if (!state.email.contains("@")) return "Enter a valid email"
         if (state.password.length < 8) return "Password must be at least 8 characters"
         if (state.password != state.confirmPassword) return "Passwords do not match"

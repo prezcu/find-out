@@ -92,7 +92,7 @@ fun RegisterScreen(
             onValueChange = viewModel::onConfirmPasswordChange,
             label = { Text("Confirm password") },
             singleLine = true,
-            visualTransformation = passwordTransform,
+            visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             enabled = !state.isLoading,
             modifier = Modifier.fillMaxWidth()

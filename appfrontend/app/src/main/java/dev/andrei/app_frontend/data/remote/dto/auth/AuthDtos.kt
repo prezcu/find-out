@@ -19,3 +19,7 @@ data class AuthResponse(
     val token: String,
     val expiresAt: Long
 )
+
+data class ErrorResponse(
+    val error: String
+)
