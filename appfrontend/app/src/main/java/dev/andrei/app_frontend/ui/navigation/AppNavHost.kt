@@ -6,12 +6,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavType
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import dev.andrei.app_frontend.ui.screen.AttractionScreen
 import dev.andrei.app_frontend.ui.screen.LandingScreen
 import dev.andrei.app_frontend.ui.screen.LoginScreen
@@ -24,18 +24,11 @@ import dev.andrei.app_frontend.ui.viewmodel.AppAuthViewModel
 fun AppNavHost(authViewModel: AppAuthViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
+    val currentDestination = backStackEntry?.destination
 
-    val startDestination = if (authViewModel.isLoggedInOnStart) {
-        NavRoutes.Landing.route
-    } else {
-        NavRoutes.Login.route
-    }
-
-    val showBottomBar = currentRoute != null &&
-            currentRoute != NavRoutes.Login.route &&
-            currentRoute != NavRoutes.Register.route &&
-            !currentRoute.startsWith(NavRoutes.AttractionDetail.ROUTE_PREFIX)
+    val showBottomBar = currentDestination?.hierarchy?.any { dest ->
+        topLevelRoutes.any { dest.hasRoute(it::class) }
+    } == true
 
     Scaffold(
         bottomBar = {
@@ -46,69 +39,72 @@ fun AppNavHost(authViewModel: AppAuthViewModel = hiltViewModel()) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = startDestination,
+            startDestination = LandingRoute,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(NavRoutes.Login.route) {
+            composable<LoginRoute> {
                 LoginScreen(
                     onLoginSuccess = {
-                        navController.navigate(NavRoutes.Landing.route) {
-                            popUpTo(NavRoutes.Login.route) { inclusive = true }
+                        navController.navigate(LandingRoute) {
+                            popUpTo(LoginRoute) { inclusive = true }
                         }
                     },
                     onNavigateToRegister = {
-                        navController.navigate(NavRoutes.Register.route)
+                        navController.navigate(RegisterRoute)
                     }
                 )
             }
 
-            composable(NavRoutes.Register.route) {
+            composable<RegisterRoute> {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        navController.navigate(NavRoutes.Landing.route) {
-                            popUpTo(NavRoutes.Login.route) { inclusive = true }
+                        navController.navigate(LandingRoute) {
+                            popUpTo(LoginRoute) { inclusive = true }
                         }
                     },
                     onNavigateToLogin = { navController.popBackStack() }
                 )
             }
 
-            composable(NavRoutes.Landing.route) {
+            composable<LandingRoute> {
                 LandingScreen(
                     onLocationClick = { locationId ->
-                        navController.navigate(NavRoutes.AttractionDetail.createRoute(locationId))
+                        navController.navigate(AttractionDetailRoute(locationId))
                     }
                 )
             }
 
-            composable(NavRoutes.Search.route) {
+            composable<SearchRoute> {
                 SearchScreen(
                     onLocationClick = { locationId ->
-                        navController.navigate(NavRoutes.AttractionDetail.createRoute(locationId))
+                        navController.navigate(AttractionDetailRoute(locationId))
                     }
                 )
             }
 
-            composable(NavRoutes.Profile.route) {
+            composable<ProfileRoute> {
                 ProfileScreen(
+                    onLogin = {
+                        navController.navigate(LoginRoute) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
                     onLogout = {
                         authViewModel.logout()
-                        navController.navigate(NavRoutes.Login.route) {
+                        navController.navigate(LandingRoute) {
                             popUpTo(0) { inclusive = true }
                         }
                     }
                 )
             }
 
-            composable(
-                route = NavRoutes.AttractionDetail.route,
-                arguments = listOf(
-                    navArgument(NavRoutes.AttractionDetail.ARG_LOCATION_ID) {
-                        type = NavType.StringType
-                    }
+            composable<AttractionDetailRoute> { //backStackEntry ->
+                // val routeArgs = backStackEntry.toRoute<AttractionDetailRoute>()
+
+                AttractionScreen(
+                    //locationId = routeArgs.locationId,
+                    onBack = { navController.popBackStack() }
                 )
-            ) {
-                AttractionScreen(onBack = { navController.popBackStack() })
             }
         }
     }

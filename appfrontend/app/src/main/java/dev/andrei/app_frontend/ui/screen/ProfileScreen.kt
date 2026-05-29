@@ -10,12 +10,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.andrei.app_frontend.ui.viewmodel.ProfileScreenViewmodel
 
 @Composable
-fun ProfileScreen(onLogout: () -> Unit) {
+fun ProfileScreen(
+    onLogin: () -> Unit,
+    onLogout: () -> Unit,
+    viewModel: ProfileScreenViewmodel = hiltViewModel()
+) {
+    val state by viewModel.logInState.collectAsStateWithLifecycle()
+
+    viewModel.updateLogInState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -34,13 +46,13 @@ fun ProfileScreen(onLogout: () -> Unit) {
         )
 
         OutlinedButton(
-            onClick = onLogout,
+            onClick = if (state) onLogout else onLogin,
             modifier = Modifier
                 .padding(top = 32.dp)
                 .fillMaxWidth()
                 .height(48.dp)
         ) {
-            Text("Log out")
+            Text(if (state) "Logout" else "Login")
         }
     }
 }

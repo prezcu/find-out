@@ -31,7 +31,7 @@ import java.util.UUID
 
 @Composable
 fun SearchScreen(
-    onLocationClick: (UUID) -> Unit,
+    onLocationClick: (String) -> Unit,
     viewModel: SearchScreenViewModel = hiltViewModel()
 ) {
     val query by viewModel.query.collectAsStateWithLifecycle()
@@ -90,7 +90,7 @@ fun SearchScreen(
                         items(state.results) { location ->
                             LocationCard(
                                 domainLocation = location,
-                                onClick = { onLocationClick(location.id) }
+                                onClick = { onLocationClick(location.id.toString()) }
                             )
                         }
                     }

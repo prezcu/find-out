@@ -20,7 +20,7 @@ public class AuthExceptionHandler {
 
     @ExceptionHandler(AuthService.InvalidCredentialsException.class)
     public ResponseEntity<Map<String, String>> handleInvalidCredentials() {
-        // same response for email or password for enumeration attack prevention
+        // same response for email or password
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "INVALID_CREDENTIALS"));
     }

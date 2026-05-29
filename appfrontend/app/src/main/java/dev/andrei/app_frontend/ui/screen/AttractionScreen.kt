@@ -22,6 +22,7 @@ import dev.andrei.app_frontend.ui.viewmodel.AttractionScreenViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttractionScreen(
+    // locationId: String,
     onBack: () -> Unit,
     viewModel: AttractionScreenViewModel = hiltViewModel()
 ) {

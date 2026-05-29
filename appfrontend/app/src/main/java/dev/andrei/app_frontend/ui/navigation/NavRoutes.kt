@@ -1,22 +1,44 @@
 package dev.andrei.app_frontend.ui.navigation
 
-import java.util.UUID
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import kotlinx.serialization.Serializable
+import androidx.compose.ui.graphics.vector.ImageVector
 
-sealed class NavRoutes(val route: String) {
-
-    data object Login : NavRoutes("login")
-
-    data object Register : NavRoutes("register")
-
-    data object Landing : NavRoutes("landing")
-
-    data object Search : NavRoutes("search")
-
-    data object Profile : NavRoutes("profile")
-
-    data object AttractionDetail : NavRoutes("attraction/{locationId}") {
-        const val ARG_LOCATION_ID = "locationId"
-        const val ROUTE_PREFIX = "attraction/"
-        fun createRoute(id: UUID): String = "$ROUTE_PREFIX$id"
-    }
+// interface for bottom navigation bar
+// routes care metadata but this makes route ssot
+sealed interface TopLevelRoute {
+    val label: String
+    val icon: ImageVector
 }
+
+@Serializable
+data object LandingRoute : TopLevelRoute {
+    override val label get() = "Home"
+    override val icon get() = Icons.Filled.Home
+}
+
+@Serializable
+data object SearchRoute :  TopLevelRoute {
+    override val label get() = "Search"
+    override val icon get() = Icons.Filled.Search
+}
+
+@Serializable
+data object ProfileRoute :  TopLevelRoute {
+    override val label get() = "Profile"
+    override val icon get() = Icons.Filled.Person
+}
+
+@Serializable object LoginRoute
+
+@Serializable object RegisterRoute
+
+// Its usually easiest to pass ID as String through navigation
+// and parse it back to UUID in your ViewModel
+@Serializable data class AttractionDetailRoute (val locationId: String) {}
+
+
+val topLevelRoutes = listOf(LandingRoute, SearchRoute, ProfileRoute)

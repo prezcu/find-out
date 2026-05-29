@@ -75,6 +75,7 @@ fun RegisterScreen(
             singleLine = true,
             visualTransformation = passwordTransform,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            //TODO: On registration password doesnt show on either text fields, remove button
             trailingIcon = {
                 TextButton(onClick = viewModel::togglePasswordVisibility) {
                     Text(if (state.isPasswordVisible) "Hide" else "Show")

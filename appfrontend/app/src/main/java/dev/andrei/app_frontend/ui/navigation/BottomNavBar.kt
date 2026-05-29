@@ -1,9 +1,6 @@
 package dev.andrei.app_frontend.ui.navigation
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
+import android.annotation.SuppressLint
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -12,43 +9,28 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavDestination.Companion.hasRoute
 
-private data class BottomNavItem(
-    val label: String,
-    val route: String,
-    val icon: @Composable () -> Unit
-)
-
-private val bottomNavItems = listOf(
-    BottomNavItem("Home", NavRoutes.Landing.route) {
-        Icon(Icons.Filled.Home, contentDescription = "Home")
-    },
-    BottomNavItem("Search", NavRoutes.Search.route) {
-        Icon(Icons.Filled.Search, contentDescription = "Search")
-    },
-    BottomNavItem("Profile", NavRoutes.Profile.route) {
-        Icon(Icons.Filled.Person, contentDescription = "Profile")
-    },
-)
 
 @Composable
 fun BottomNavBar(navController: NavController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
+    val currentDestination = backStackEntry?.destination
 
     NavigationBar {
-        bottomNavItems.forEach { item ->
+        topLevelRoutes.forEach { route ->
             NavigationBarItem(
-                selected = currentRoute == item.route,
+                selected = currentDestination?.hierarchy?.any { it.hasRoute(route::class) } == true,
                 onClick = {
-                    navController.navigate(item.route) {
+                    navController.navigate(route) {
                         launchSingleTop = true
                         restoreState = true
-                        popUpTo(NavRoutes.Landing.route) { saveState = true }
+                        popUpTo(LandingRoute) { saveState = true }
                     }
                 },
-                icon = item.icon,
-                label = { Text(item.label) }
+                icon = { Icon(route.icon, contentDescription = route.label) },
+                label = { Text(route.label) }
             )
         }
     }

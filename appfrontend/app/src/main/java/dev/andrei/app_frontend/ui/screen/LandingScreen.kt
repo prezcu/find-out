@@ -21,7 +21,7 @@ import java.util.UUID
 
 @Composable
 fun LandingScreen(
-    onLocationClick: (UUID) -> Unit,
+    onLocationClick: (String) -> Unit,
     screenViewModel: LandingScreenViewModel = hiltViewModel()
 ) {
     val uiState by screenViewModel.screenState.collectAsStateWithLifecycle()
@@ -56,7 +56,7 @@ fun LandingScreen(
                         items(state.locations) { location ->
                             LocationCard(
                                 domainLocation = location,
-                                onClick = { onLocationClick(location.id) }
+                                onClick = { onLocationClick(location.id.toString()) }
                             )
                         }
 
