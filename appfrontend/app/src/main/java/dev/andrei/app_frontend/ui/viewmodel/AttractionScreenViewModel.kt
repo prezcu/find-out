@@ -10,18 +10,31 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import dev.andrei.app_frontend.data.repository.AuthRepository
 import dev.andrei.app_frontend.ui.navigation.AttractionDetailRoute
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class AttractionScreenViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    repository: LocationRepository
+    repository: LocationRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val args = savedStateHandle.toRoute<AttractionDetailRoute>()
     val locationId = UUID.fromString(args.locationId)
+    private val _logInState = MutableStateFlow(false)
+    val logInState = _logInState.asStateFlow()
+
+    fun updateLogInState(){
+        viewModelScope.launch {
+            _logInState.value = authRepository.isLoggedIn()
+        }
+    }
 
     val location: StateFlow<LocationEntity?> = repository
         .getLocationById(locationId)

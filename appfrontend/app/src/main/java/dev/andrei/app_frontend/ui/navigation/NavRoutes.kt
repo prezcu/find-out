@@ -40,5 +40,7 @@ data object ProfileRoute :  TopLevelRoute {
 // and parse it back to UUID in your ViewModel
 @Serializable data class AttractionDetailRoute (val locationId: String) {}
 
+// same thing
+@Serializable data class WriteReviewRoute (val locationId: String)
 
 val topLevelRoutes = listOf(LandingRoute, SearchRoute, ProfileRoute)

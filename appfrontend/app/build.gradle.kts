@@ -90,4 +90,6 @@ dependencies {
     implementation(libs.okhttp)
     // Encrypted SharedPreferences for storing JWT
     implementation(libs.androidx.security.crypto)
+    // kotlinx-serialization JSON runtime (used by Room TypeConverters and type-safe navigation)
+    implementation(libs.kotlinx.serialization.json)
 }

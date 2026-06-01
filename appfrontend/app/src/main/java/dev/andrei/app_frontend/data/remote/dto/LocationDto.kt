@@ -11,7 +11,8 @@ data class LocationDto (
     val latitude: Double,
     val hasAccessibleFeatures: Boolean,
     val hasToilets: Boolean,
-    val averageScore: Double
+    val averageScore: Double,
+    val attributes: List<String>
 ){
-    fun toEntity() = LocationEntity(id, name, primaryCategory, longitude, latitude, hasAccessibleFeatures, hasToilets, averageScore)
+    fun toEntity() = LocationEntity(id, name, primaryCategory, longitude, latitude, hasAccessibleFeatures, hasToilets, averageScore, attributes)
 }

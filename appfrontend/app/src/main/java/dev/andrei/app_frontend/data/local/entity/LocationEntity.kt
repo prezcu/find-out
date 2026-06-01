@@ -13,5 +13,6 @@ data class LocationEntity(
     val latitude: Double,
     val hasAccessibleFeatures: Boolean,
     val hasToilets: Boolean,
-    val averageScore: Double
+    val averageScore: Double,
+    val attributes: List<String>
 )

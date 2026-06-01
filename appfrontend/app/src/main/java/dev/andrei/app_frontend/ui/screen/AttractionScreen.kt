@@ -18,15 +18,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
 import dev.andrei.app_frontend.ui.viewmodel.AttractionScreenViewModel
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttractionScreen(
-    // locationId: String,
+    onSignIn: () -> Unit,
+    onWriteReview: () -> Unit,
     onBack: () -> Unit,
     viewModel: AttractionScreenViewModel = hiltViewModel()
 ) {
+    viewModel.updateLogInState()
     val location by viewModel.location.collectAsStateWithLifecycle()
+    val logInState by viewModel.logInState.collectAsStateWithLifecycle()
+
+    val routeDestination = if (logInState) onWriteReview else onSignIn
 
     Scaffold(
         topBar = {
@@ -52,13 +58,13 @@ fun AttractionScreen(
                     CircularProgressIndicator()
                 }
             }
-            else -> AttractionDetail(loc, Modifier.padding(padding))
+            else -> AttractionDetail(loc,logInState, routeDestination, Modifier.padding(padding))
         }
     }
 }
 
 @Composable
-private fun AttractionDetail(location: LocationEntity, modifier: Modifier = Modifier) {
+private fun AttractionDetail(location: LocationEntity, loggedIn: Boolean, route: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -130,6 +136,18 @@ private fun AttractionDetail(location: LocationEntity, modifier: Modifier = Modi
                 label = "Toilets available",
                 available = location.hasToilets
             )
+        }
+
+        HorizontalDivider()
+
+        // --Review
+        FilledTonalButton(
+            onClick = route,
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .height(48.dp)
+        ) {
+            Text(if (loggedIn) "Write a review" else "Sign in to review")
         }
     }
 }

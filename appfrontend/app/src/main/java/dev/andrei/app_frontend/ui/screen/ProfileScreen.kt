@@ -16,13 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.andrei.app_frontend.ui.viewmodel.ProfileScreenViewmodel
+import dev.andrei.app_frontend.ui.viewmodel.ProfileScreenViewModel
 
 @Composable
 fun ProfileScreen(
-    onLogin: () -> Unit,
+    onSignIn: () -> Unit,
     onLogout: () -> Unit,
-    viewModel: ProfileScreenViewmodel = hiltViewModel()
+    viewModel: ProfileScreenViewModel = hiltViewModel()
 ) {
     val state by viewModel.logInState.collectAsStateWithLifecycle()
 
@@ -46,7 +46,7 @@ fun ProfileScreen(
         )
 
         OutlinedButton(
-            onClick = if (state) onLogout else onLogin,
+            onClick = if (state) onLogout else onSignIn,
             modifier = Modifier
                 .padding(top = 32.dp)
                 .fillMaxWidth()

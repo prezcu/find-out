@@ -12,12 +12,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import dev.andrei.app_frontend.ui.screen.AttractionScreen
 import dev.andrei.app_frontend.ui.screen.LandingScreen
 import dev.andrei.app_frontend.ui.screen.LoginScreen
 import dev.andrei.app_frontend.ui.screen.ProfileScreen
 import dev.andrei.app_frontend.ui.screen.RegisterScreen
 import dev.andrei.app_frontend.ui.screen.SearchScreen
+import dev.andrei.app_frontend.ui.screen.WriteReviewScreen
 import dev.andrei.app_frontend.ui.viewmodel.AppAuthViewModel
 
 @Composable
@@ -45,9 +47,9 @@ fun AppNavHost(authViewModel: AppAuthViewModel = hiltViewModel()) {
             composable<LoginRoute> {
                 LoginScreen(
                     onLoginSuccess = {
-                        navController.navigate(LandingRoute) {
-                            popUpTo(LoginRoute) { inclusive = true }
-                        }
+                        // Return to the screen the user was on before authenticating;
+                        // popping Login inclusively keeps it off the back stack.
+                        navController.popBackStack(LoginRoute, inclusive = true)
                     },
                     onNavigateToRegister = {
                         navController.navigate(RegisterRoute)
@@ -58,9 +60,8 @@ fun AppNavHost(authViewModel: AppAuthViewModel = hiltViewModel()) {
             composable<RegisterRoute> {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        navController.navigate(LandingRoute) {
-                            popUpTo(LoginRoute) { inclusive = true }
-                        }
+                        // Drop both Register and Login, returning to the pre-auth screen.
+                        navController.popBackStack(LoginRoute, inclusive = true)
                     },
                     onNavigateToLogin = { navController.popBackStack() }
                 )
@@ -84,9 +85,9 @@ fun AppNavHost(authViewModel: AppAuthViewModel = hiltViewModel()) {
 
             composable<ProfileRoute> {
                 ProfileScreen(
-                    onLogin = {
+                    onSignIn = {
                         navController.navigate(LoginRoute) {
-                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
                         }
                     },
                     onLogout = {
@@ -98,12 +99,31 @@ fun AppNavHost(authViewModel: AppAuthViewModel = hiltViewModel()) {
                 )
             }
 
-            composable<AttractionDetailRoute> { //backStackEntry ->
-                // val routeArgs = backStackEntry.toRoute<AttractionDetailRoute>()
+            composable<AttractionDetailRoute> { backStackEntry ->
+                val routeArgs = backStackEntry.toRoute<AttractionDetailRoute>()
+                val locationId = routeArgs.locationId
 
                 AttractionScreen(
-                    //locationId = routeArgs.locationId,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onSignIn = {
+                        navController.navigate(LoginRoute) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onWriteReview = {
+                        navController.navigate(WriteReviewRoute(locationId))
+                    }
+                )
+            }
+
+            composable<WriteReviewRoute> {
+                WriteReviewScreen(
+                    onBack = { navController.popBackStack() },
+                    onSubmitSuccess = {
+                        navController.navigate(LandingRoute) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
                 )
             }
         }
