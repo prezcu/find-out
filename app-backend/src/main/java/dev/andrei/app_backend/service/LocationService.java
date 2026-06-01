@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,14 +28,22 @@ public class LocationService {
 
     @Transactional(readOnly = true)
     public List<LocationDto> getTop10CloseLocations(JustCoordinatesDto request) {
+        List<UUID> orderedIds = locationRepository.findTop10CloseLocationIds(
+                request.latitude(), request.longitude());
+        if (orderedIds.isEmpty()) {
+            return List.of();
+        }
 
-        double latitude = request.latitude();
-        double longitude = request.longitude();
-
-        return locationRepository.findTop10CloseLocations(latitude, longitude)
+        Map<UUID, Location> byId = locationRepository
+                .findAllWithAttributesByIdIn(orderedIds)
                 .stream()
+                .collect(Collectors.toMap(Location::getId, l -> l));
+
+        return orderedIds.stream()
+                .map(byId::get)
+                .filter(Objects::nonNull)
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -46,10 +57,14 @@ public class LocationService {
         return locationRepository.findByNormalizedNameContaining(normalized, page)
                 .stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private LocationDto toDto(Location location) {
+        List<String> attributeNames = location.getLocationAttributes().stream()
+                .map(la -> la.getAttribute().getName())
+                .toList();
+
         return new LocationDto(
                 location.getId(),
                 location.getName(),
@@ -58,7 +73,8 @@ public class LocationService {
                 location.getCoordinate_point().getY(),
                 location.has_toilets(),
                 location.has_accessibility_features(),
-                location.getAverage_score() != null ? location.getAverage_score() : 0.0
+                location.getAverage_score(),
+                attributeNames
         );
     }
 }

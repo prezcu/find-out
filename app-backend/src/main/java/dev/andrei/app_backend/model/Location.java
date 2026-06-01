@@ -4,6 +4,9 @@ import dev.andrei.app_backend.service.TextNormalizer;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Immutable;
 import org.locationtech.jts.geom.Point;
+
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.time.Instant;
 import lombok.Getter;
@@ -59,6 +62,9 @@ public class Location {
 
     @Column(name = "website_url")
     private String website_url;
+
+    @OneToMany(mappedBy = "location")
+    private Set<LocationAttribute> locationAttributes;
 
     public Location() {}
 
