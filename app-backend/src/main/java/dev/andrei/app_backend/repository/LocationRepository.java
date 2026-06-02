@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -53,4 +54,16 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
      */
     @EntityGraph(attributePaths = {"locationAttributes", "locationAttributes.attribute"})
     List<Location> findByNormalizedNameContaining(String normalizedQuery, Pageable pageable);
+
+    // Single location with its attribute aggregates fetched, so a review submission can validate
+    // attribute names and update the running averages in one managed graph. Mirrors
+    // findAllWithAttributesByIdIn but for one id.
+    @Query("""
+        SELECT l
+        FROM Location l
+        LEFT JOIN FETCH l.locationAttributes la
+        LEFT JOIN FETCH la.attribute
+        WHERE l.id = :id
+        """)
+    Optional<Location> findWithAttributesById(@Param("id") UUID id);
 }

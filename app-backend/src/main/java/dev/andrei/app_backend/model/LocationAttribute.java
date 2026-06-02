@@ -4,11 +4,10 @@ package dev.andrei.app_backend.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Immutable;
 import java.util.UUID;
 
 @Entity
-@Immutable
+// Mutable: submitting a review updates average_score and score_count.
 @Table(
         name = "location_attribute"
 )

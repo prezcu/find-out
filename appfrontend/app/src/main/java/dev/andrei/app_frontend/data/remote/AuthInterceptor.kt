@@ -15,8 +15,9 @@ class AuthInterceptor @Inject constructor(
         val original = chain.request()
         val path = original.url.encodedPath
 
-        // no token attached to the public auth endpoints
-        if (path.startsWith("/auth/register") || path.startsWith("/auth/login")) {
+        // token attached only to the submit review request
+        // so far only login-required feature
+        if (!path.startsWith("/api/reviews")) {
             return chain.proceed(original)
         }
 

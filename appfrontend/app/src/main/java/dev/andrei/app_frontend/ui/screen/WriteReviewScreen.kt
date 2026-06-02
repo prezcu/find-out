@@ -14,24 +14,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -41,6 +45,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.andrei.app_frontend.ui.state.AttributeRating
+import dev.andrei.app_frontend.ui.state.ReviewDraft
 import dev.andrei.app_frontend.ui.viewmodel.WriteReviewScrenViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +57,17 @@ fun WriteReviewScreen(
     viewModel: WriteReviewScrenViewModel = hiltViewModel()
 ) {
     val location by viewModel.location.collectAsStateWithLifecycle()
+    val reviewTextState = rememberTextFieldState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // UI state for the rating of each attribute card, keyed by attribute name.
+    // Hoisted here (instead of inside AttributeCard) so it can be collected on submit.
+    val attributeRatings = remember { mutableStateMapOf<String, Float>() }
+
+    // Navigate away exactly once, after composition settles, when the submit succeeds.
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) onSubmitSuccess()
+    }
 
     Scaffold(
         topBar = {
@@ -74,10 +91,69 @@ fun WriteReviewScreen(
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     items(location?.attributes ?: emptyList()) { attribute ->
-                        AttributeCard(attributeName = attribute)
+                        AttributeCard(
+                            attributeName = attribute,
+                            rating = attributeRatings[attribute] ?: 0f,
+                            onRatingChange = { attributeRatings[attribute] = it }
+                        )
                     }
+
+                    item {
+                        OutlinedTextField(
+                            state = reviewTextState,
+                            label = { Text("Write your review") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 15.dp),
+                            lineLimits = TextFieldLineLimits.MultiLine(
+                                minHeightInLines = 3,
+                                maxHeightInLines = 8
+                            )
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        val draft = ReviewDraft(
+                            attributeRatings = (location?.attributes ?: emptyList()).map { attribute ->
+                                AttributeRating(
+                                    attribute = attribute,
+                                    rating = attributeRatings[attribute] ?: 0f
+                                )
+                            },
+                            reviewText = reviewTextState.text.toString()
+                        )
+                        viewModel.submitReview(draft)
+                    },
+                    enabled = location != null && !uiState.isSubmitting,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                ) {
+                    if (uiState.isSubmitting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Submit review")
+                    }
+                }
+
+                if (uiState.errorMessage != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = uiState.errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }
@@ -88,9 +164,11 @@ fun WriteReviewScreen(
 
 
 @Composable
-fun AttributeCard(attributeName: String) {
-    var rating by remember { mutableStateOf(0f) }
-
+fun AttributeCard(
+    attributeName: String,
+    rating: Float,
+    onRatingChange: (Float) -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -104,7 +182,7 @@ fun AttributeCard(attributeName: String) {
             ) {
                 HalfStarRatingBar(
                     rating = rating,
-                    onRatingChange = { rating = it }
+                    onRatingChange = onRatingChange
                 )
                 Text(
                     text = "%.1f".format(rating),

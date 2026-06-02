@@ -2,7 +2,6 @@ package dev.andrei.app_backend.model;
 
 import dev.andrei.app_backend.service.TextNormalizer;
 import jakarta.persistence.*;
-import org.hibernate.annotations.Immutable;
 import org.locationtech.jts.geom.Point;
 
 import java.util.List;
@@ -13,7 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Immutable // schimbam cand punem feature de adaugat locatii
+// Mutable: submitting a review updates average_score and the per-attribute aggregates.
 @Table(
         name = "location",
         indexes = {

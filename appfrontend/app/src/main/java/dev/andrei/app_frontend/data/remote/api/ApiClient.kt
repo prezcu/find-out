@@ -2,6 +2,7 @@ package dev.andrei.app_frontend.data.remote.api
 
 import dev.andrei.app_frontend.data.remote.dto.JustCoordinatesDto
 import dev.andrei.app_frontend.data.remote.dto.LocationDto
+import dev.andrei.app_frontend.data.remote.dto.SubmitReviewRequestDto
 import dev.andrei.app_frontend.data.remote.dto.auth.AuthResponse
 import dev.andrei.app_frontend.data.remote.dto.auth.ChangePasswordRequest
 import dev.andrei.app_frontend.data.remote.dto.auth.LoginRequest
@@ -43,5 +44,10 @@ interface ApiService {
     @POST("/auth/change-password")
     suspend fun changePassword(
         @Body request: ChangePasswordRequest
+    ): Response<Unit>
+
+    @POST("/api/reviews")
+    suspend fun submitReview(
+        @Body request: SubmitReviewRequestDto
     ): Response<Unit>
 }
