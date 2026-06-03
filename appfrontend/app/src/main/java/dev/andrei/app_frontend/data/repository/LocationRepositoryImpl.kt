@@ -37,7 +37,13 @@ class LocationRepositoryImpl @Inject constructor(
         val request = JustCoordinatesDto(deviceLatitude, deviceLongitude)
         val response = api.fetchRecommendedLocations(request)
         if (response.isSuccessful && response.body() != null) {
-            emit(response.body()!!.map { it.toEntity() })
+            val entities = response.body()!!.map { it.toEntity() }
+            // Persist so the detail screen (which reads by id from Room) can resolve these.
+            // We still emit the in-match-order list directly, so the landing ranking is preserved.
+            if (entities.isNotEmpty()) {
+                dao.insertLocations(entities)
+            }
+            emit(entities)
         } else {
             emit(emptyList())
         }

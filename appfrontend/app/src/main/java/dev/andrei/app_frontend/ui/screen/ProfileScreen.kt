@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.data.remote.dto.MyReviewDto
+import dev.andrei.app_frontend.ui.util.displayLabel
 import dev.andrei.app_frontend.ui.viewmodel.ProfileScreenViewModel
 
 @Composable
@@ -170,7 +171,7 @@ private fun MyReviewCard(review: MyReviewDto) {
             if (review.attributeScores.isNotEmpty()) {
                 Text(
                     text = review.attributeScores.joinToString("   •   ") {
-                        "${it.attribute} ${"%.1f".format(it.score)}"
+                        "${displayLabel(it.displayName, it.attribute)} ${"%.1f".format(it.score)}"
                     },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

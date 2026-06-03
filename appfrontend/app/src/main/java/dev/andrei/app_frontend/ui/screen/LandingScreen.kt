@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
 import dev.andrei.app_frontend.ui.viewmodel.LandingScreenViewModel
 import dev.andrei.app_frontend.ui.state.LocationUiState
+import dev.andrei.app_frontend.ui.util.displayLabel
 import kotlin.math.roundToInt
 
 @Composable
@@ -96,7 +97,10 @@ fun LocationCard(domainLocation: LocationEntity, onClick: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = domainLocation.name, style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = domainLocation.category, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = displayLabel(domainLocation.primaryCategoryDisplayName, domainLocation.category),
+                style = MaterialTheme.typography.bodyMedium
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = "Rating: " + domainLocation.averageScore.toString(), style = MaterialTheme.typography.bodyMedium)
             domainLocation.matchScore?.let { match ->

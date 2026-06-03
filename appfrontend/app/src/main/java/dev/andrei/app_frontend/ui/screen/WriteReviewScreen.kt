@@ -47,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.ui.state.AttributeRating
 import dev.andrei.app_frontend.ui.state.ReviewDraft
+import dev.andrei.app_frontend.ui.util.displayLabel
 import dev.andrei.app_frontend.ui.viewmodel.WriteReviewScrenViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,10 +97,11 @@ fun WriteReviewScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(location?.attributes ?: emptyList()) { attribute ->
+                        // Display the friendly label, but key ratings by the stable name.
                         AttributeCard(
-                            attributeName = attribute,
-                            rating = attributeRatings[attribute] ?: 0f,
-                            onRatingChange = { attributeRatings[attribute] = it }
+                            attributeName = displayLabel(attribute.displayName, attribute.name),
+                            rating = attributeRatings[attribute.name] ?: 0f,
+                            onRatingChange = { attributeRatings[attribute.name] = it }
                         )
                     }
 
@@ -123,8 +125,8 @@ fun WriteReviewScreen(
                         val draft = ReviewDraft(
                             attributeRatings = (location?.attributes ?: emptyList()).map { attribute ->
                                 AttributeRating(
-                                    attribute = attribute,
-                                    rating = attributeRatings[attribute] ?: 0f
+                                    attribute = attribute.name,
+                                    rating = attributeRatings[attribute.name] ?: 0f
                                 )
                             },
                             reviewText = reviewTextState.text.toString()

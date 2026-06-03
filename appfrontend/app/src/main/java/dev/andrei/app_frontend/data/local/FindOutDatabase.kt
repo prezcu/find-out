@@ -8,9 +8,9 @@ import dev.andrei.app_frontend.data.local.entity.LocationEntity
 
 @Database(
     entities = [LocationEntity::class],
-    version = 3
+    version = 4
 )
-@TypeConverters(StringListConverter::class)
+@TypeConverters(StringListConverter::class, AttributeListConverter::class)
 abstract class FindOutDatabase: RoomDatabase() {
 
     abstract val locationDao: LocationDao

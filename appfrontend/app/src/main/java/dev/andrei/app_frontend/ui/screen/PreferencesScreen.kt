@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.data.remote.dto.preference.AttributeConceptDto
+import dev.andrei.app_frontend.ui.util.displayLabel
 import dev.andrei.app_frontend.ui.viewmodel.PreferencesViewModel
 import kotlin.math.roundToInt
 
@@ -118,7 +119,7 @@ private fun ConceptPreferenceRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = concept.displayName,
+                    text = displayLabel(concept.displayName, concept.slug),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(

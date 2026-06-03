@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
 import dev.andrei.app_frontend.data.remote.dto.ReviewDto
+import dev.andrei.app_frontend.ui.util.displayLabel
 import dev.andrei.app_frontend.ui.viewmodel.AttractionScreenViewModel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -102,7 +103,7 @@ private fun AttractionDetail(
             )
             AssistChip(
                 onClick = {},
-                label = { Text(location.category) },
+                label = { Text(displayLabel(location.primaryCategoryDisplayName, location.category)) },
                 leadingIcon = {
                     Icon(
                         Icons.Filled.Place,
@@ -222,7 +223,7 @@ private fun ReviewCard(review: ReviewDto) {
             if (review.attributeScores.isNotEmpty()) {
                 Text(
                     text = review.attributeScores.joinToString("   •   ") {
-                        "${it.attribute} ${"%.1f".format(it.score)}"
+                        "${displayLabel(it.displayName, it.attribute)} ${"%.1f".format(it.score)}"
                     },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
