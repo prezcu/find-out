@@ -2,7 +2,7 @@ package dev.andrei.app_frontend.data.repository
 
 interface AuthRepository {
 
-    suspend fun register(email: String, password: String): AuthResult
+    suspend fun register(email: String, password: String, username: String): AuthResult
 
     suspend fun login(email: String, password: String): AuthResult
 

@@ -11,11 +11,14 @@ import dev.andrei.app_frontend.data.remote.dto.auth.AuthResponse
 import dev.andrei.app_frontend.data.remote.dto.auth.ChangePasswordRequest
 import dev.andrei.app_frontend.data.remote.dto.auth.LoginRequest
 import dev.andrei.app_frontend.data.remote.dto.auth.RegisterRequest
+import dev.andrei.app_frontend.data.remote.dto.preference.AttributeConceptDto
+import dev.andrei.app_frontend.data.remote.dto.preference.UpdatePreferencesRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -31,6 +34,19 @@ interface ApiService {
     suspend fun fetchTop10CloseLocations(
         @Body request: JustCoordinatesDto
     ): Response<List<LocationDto>>
+
+    @POST("/api/locations/recommended")
+    suspend fun fetchRecommendedLocations(
+        @Body request: JustCoordinatesDto
+    ): Response<List<LocationDto>>
+
+    @GET("/api/preferences")
+    suspend fun getPreferences(): Response<List<AttributeConceptDto>>
+
+    @PUT("/api/preferences")
+    suspend fun updatePreferences(
+        @Body request: UpdatePreferencesRequestDto
+    ): Response<Unit>
 
     @GET("/api/locations/search")
     suspend fun searchLocationsByName(

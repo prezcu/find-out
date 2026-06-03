@@ -8,7 +8,7 @@ import dev.andrei.app_frontend.data.local.entity.LocationEntity
 
 @Database(
     entities = [LocationEntity::class],
-    version = 2
+    version = 3
 )
 @TypeConverters(StringListConverter::class)
 abstract class FindOutDatabase: RoomDatabase() {

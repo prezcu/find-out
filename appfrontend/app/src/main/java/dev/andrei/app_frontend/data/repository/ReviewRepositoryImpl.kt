@@ -16,7 +16,6 @@ class ReviewRepositoryImpl @Inject constructor(
             val response = api.submitReview(request)
             if (!response.isSuccessful) {
                 // turns into Result.failure
-                // the message is surfaced to the user by the viewmodel
                 error(response.toSubmitMessage())
             }
             Unit
@@ -38,7 +37,7 @@ class ReviewRepositoryImpl @Inject constructor(
 
     private fun Response<*>.toSubmitMessage(): String = when (code()) {
         401 -> "You need to be signed in to post a review"
-        409 -> "You have already reviewed this location"
+        409 -> "You have already reviewi fix ed this location"
         in 400..499 -> "Your review could not be submitted (${code()})"
         in 500..599 -> "Server error, please try again later"
         else -> "Unexpected error (${code()})"

@@ -11,6 +11,7 @@ data class LoginFormState(
 
 data class RegisterFormState(
     val email: String = "",
+    val username: String = "",
     val password: String = "",
     val confirmPassword: String = "",
     val isPasswordVisible: Boolean = false,

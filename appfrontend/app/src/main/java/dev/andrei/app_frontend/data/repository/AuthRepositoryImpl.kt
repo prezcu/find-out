@@ -17,8 +17,8 @@ class AuthRepositoryImpl @Inject constructor(
     private val tokenStore: AuthTokenStore
 ) : AuthRepository {
 
-    override suspend fun register(email: String, password: String): AuthResult =
-        runCatching { api.register(RegisterRequest(email, password)) }
+    override suspend fun register(email: String, password: String, username: String): AuthResult =
+        runCatching { api.register(RegisterRequest(email, password, username)) }
             .fold(
                 onSuccess = { it.handleAuthResponse() },
                 onFailure = { AuthResult.Error(it.message ?: "Network error") }

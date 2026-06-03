@@ -203,7 +203,8 @@ private fun HalfStarRatingBar(
     val emptyColor = MaterialTheme.colorScheme.outlineVariant
     Row {
         for (i in 0 until 5) {
-            // How much of this star is filled: 0f (empty), 0.5f (half), or 1f (full).
+            // how much of this star is filled
+            // 0f (empty), 0.5f (half), or 1f (full)
             val fill = (rating - i).coerceIn(0f, 1f)
             Box(modifier = Modifier.size(starSize)) {
                 Icon(
@@ -226,7 +227,8 @@ private fun HalfStarRatingBar(
                             }
                     )
                 }
-                // Two invisible tap zones on top: left half -> +0.5, right half -> +1.
+                // 2 invisible tap zones on top
+                // left half -> +0.5, right half -> +1.
                 Row(Modifier.matchParentSize()) {
                     Box(
                         modifier = Modifier

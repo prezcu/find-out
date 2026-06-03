@@ -12,6 +12,7 @@ import dev.andrei.app_frontend.data.remote.api.ApiService
 import dev.andrei.app_frontend.data.remote.dto.JustCoordinatesDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import java.util.UUID
 import javax.inject.Inject
@@ -30,6 +31,19 @@ class LocationRepositoryImpl @Inject constructor(
             .catch {
                 e -> emit(emptyList())
             }
+    }
+
+    override fun getRecommendedLocations(deviceLongitude: Double, deviceLatitude: Double): Flow<List<LocationEntity>> = flow {
+        val request = JustCoordinatesDto(deviceLatitude, deviceLongitude)
+        val response = api.fetchRecommendedLocations(request)
+        if (response.isSuccessful && response.body() != null) {
+            emit(response.body()!!.map { it.toEntity() })
+        } else {
+            emit(emptyList())
+        }
+    }.catch {
+        it.printStackTrace()
+        emit(emptyList())
     }
 
     override fun getLocationById(id: UUID): Flow<LocationEntity?> = dao.getLocationById(id)

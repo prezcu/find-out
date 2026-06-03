@@ -50,4 +50,7 @@ data object SavedRoute : TopLevelRoute {
 // same thing
 @Serializable data class WriteReviewRoute (val locationId: String)
 
+// Edit-preferences sub-screen, reached from Profile (not a bottom-nav destination).
+@Serializable object PreferencesRoute
+
 val topLevelRoutes = listOf(LandingRoute, SearchRoute, SavedRoute, ProfileRoute)

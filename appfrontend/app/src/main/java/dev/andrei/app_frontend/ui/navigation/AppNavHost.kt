@@ -16,6 +16,7 @@ import androidx.navigation.toRoute
 import dev.andrei.app_frontend.ui.screen.AttractionScreen
 import dev.andrei.app_frontend.ui.screen.LandingScreen
 import dev.andrei.app_frontend.ui.screen.LoginScreen
+import dev.andrei.app_frontend.ui.screen.PreferencesScreen
 import dev.andrei.app_frontend.ui.screen.ProfileScreen
 import dev.andrei.app_frontend.ui.screen.RegisterScreen
 import dev.andrei.app_frontend.ui.screen.SearchScreen
@@ -109,7 +110,18 @@ fun AppNavHost(authViewModel: AppAuthViewModel = hiltViewModel()) {
                         navController.navigate(LandingRoute) {
                             popUpTo(0) { inclusive = true }
                         }
+                    },
+                    onEditPreferences = {
+                        navController.navigate(PreferencesRoute) {
+                            launchSingleTop = true
+                        }
                     }
+                )
+            }
+
+            composable<PreferencesRoute> {
+                PreferencesScreen(
+                    onBack = { navController.popBackStack() }
                 )
             }
 

@@ -15,9 +15,14 @@ class AuthInterceptor @Inject constructor(
         val original = chain.request()
         val path = original.url.encodedPath
 
-        // Attach the JWT to authenticated endpoints: reviews (submit + /reviews/me) and wishlist.
-        // Public reads such as /api/locations/{id}/reviews are left untouched.
-        if (!path.startsWith("/api/reviews") && !path.startsWith("/api/wishlist")) {
+        // Attach the JWT to authenticated endpoints: reviews (submit + /reviews/me), wishlist,
+        // preferences, and the personalized recommended list. Public reads such as
+        // /api/locations/nearby, /api/locations/search and /api/locations/{id}/reviews are left untouched.
+        val needsAuth = path.startsWith("/api/reviews") ||
+                path.startsWith("/api/wishlist") ||
+                path.startsWith("/api/preferences") ||
+                path == "/api/locations/recommended"
+        if (!needsAuth) {
             return chain.proceed(original)
         }
 

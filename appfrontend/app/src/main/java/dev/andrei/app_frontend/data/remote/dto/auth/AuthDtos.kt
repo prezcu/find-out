@@ -1,8 +1,12 @@
 package dev.andrei.app_frontend.data.remote.dto.auth
 
+import com.google.gson.annotations.SerializedName
+
 data class RegisterRequest(
     val email: String,
-    val password: String
+    val password: String,
+    // Collected as "username" in the UI; sent to the backend as its required "displayName" field.
+    @SerializedName("displayName") val username: String
 )
 
 data class LoginRequest(

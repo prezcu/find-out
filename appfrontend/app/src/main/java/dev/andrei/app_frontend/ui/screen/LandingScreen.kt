@@ -17,7 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
 import dev.andrei.app_frontend.ui.viewmodel.LandingScreenViewModel
 import dev.andrei.app_frontend.ui.state.LocationUiState
-import java.util.UUID
+import kotlin.math.roundToInt
 
 @Composable
 fun LandingScreen(
@@ -45,9 +45,12 @@ fun LandingScreen(
                 val deviceLocation by screenViewModel.getDeviceCurrentLocation()
                     .collectAsStateWithLifecycle()
 
+                // When any result carries a match score, the list is personalized.
+                val isMatchRanked = state.locations.any { it.matchScore != null }
+
                 Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                     Text(
-                        text = "Top 10 Rated Locations Nearby",
+                        text = if (isMatchRanked) "Best matches near you" else "Top 10 Rated Locations Nearby",
                         style = MaterialTheme.typography.headlineMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
@@ -96,6 +99,14 @@ fun LocationCard(domainLocation: LocationEntity, onClick: () -> Unit) {
             Text(text = domainLocation.category, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = "Rating: " + domainLocation.averageScore.toString(), style = MaterialTheme.typography.bodyMedium)
+            domainLocation.matchScore?.let { match ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${(match / 5.0 * 100).roundToInt()}% match",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = domainLocation.latitude.toString(), style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(4.dp))

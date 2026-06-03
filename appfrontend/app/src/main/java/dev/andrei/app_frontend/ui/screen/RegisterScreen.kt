@@ -69,6 +69,18 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
+            value = state.username,
+            onValueChange = viewModel::onUsernameChange,
+            label = { Text("Username") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            enabled = !state.isLoading,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
             value = state.password,
             onValueChange = viewModel::onPasswordChange,
             label = { Text("Password") },

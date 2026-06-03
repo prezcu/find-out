@@ -14,5 +14,7 @@ data class LocationEntity(
     val hasAccessibleFeatures: Boolean,
     val hasToilets: Boolean,
     val averageScore: Double,
-    val attributes: List<String>
+    val attributes: List<String>,
+    // Per-user match score (0–5) when this row came from the recommended list; null otherwise.
+    val matchScore: Double? = null
 )

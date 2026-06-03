@@ -44,13 +44,9 @@ class WriteReviewScrenViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(WriteReviewUiState())
     val uiState = _uiState.asStateFlow()
 
-    /**
-     * Receives the [draft] collected by the screen, validates it, and POSTs it through the
-     * repository. The result is funnelled into [uiState] so the screen can react (show a spinner,
-     * an error, or navigate away on success).
-     */
+
     fun submitReview(draft: ReviewDraft) {
-        // Only the attributes the user actually rated count (rating > 0 means "rated").
+        // only the attributes the user actually rated count (rating > 0 == rated).
         val ratedAttributes = draft.attributeRatings.filter { it.rating > 0f }
         if (ratedAttributes.size < MIN_RATED_ATTRIBUTES) {
             _uiState.update {

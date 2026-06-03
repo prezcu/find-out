@@ -23,6 +23,9 @@ class RegisterScreenViewModel @Inject constructor(
     fun onEmailChange(value: String) =
         _formState.update { it.copy(email = value, errorMessage = null) }
 
+    fun onUsernameChange(value: String) =
+        _formState.update { it.copy(username = value, errorMessage = null) }
+
     fun onPasswordChange(value: String) =
         _formState.update { it.copy(password = value, errorMessage = null) }
 
@@ -42,7 +45,7 @@ class RegisterScreenViewModel @Inject constructor(
 
         _formState.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch {
-            when (val result = authRepository.register(state.email.trim(), state.password)) {
+            when (val result = authRepository.register(state.email.trim(), state.password, state.username.trim())) {
                 is AuthResult.Success ->
                     _formState.update { it.copy(isLoading = false, isSuccess = true) }
                 is AuthResult.Error ->
@@ -55,6 +58,8 @@ class RegisterScreenViewModel @Inject constructor(
         if (state.email.isBlank()) return "Email is required"
         //TODO: Additional email validation
         if (!state.email.contains("@")) return "Enter a valid email"
+        if (state.username.isBlank()) return "Username is required"
+        if (state.username.length > 50) return "Username must be at most 50 characters"
         if (state.password.length < 8) return "Password must be at least 8 characters"
         if (state.password != state.confirmPassword) return "Passwords do not match"
         return null

@@ -38,6 +38,7 @@ import dev.andrei.app_frontend.ui.viewmodel.ProfileScreenViewModel
 fun ProfileScreen(
     onSignIn: () -> Unit,
     onLogout: () -> Unit,
+    onEditPreferences: () -> Unit,
     viewModel: ProfileScreenViewModel = hiltViewModel()
 ) {
     val loggedIn by viewModel.logInState.collectAsStateWithLifecycle()
@@ -115,6 +116,15 @@ fun ProfileScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onEditPreferences,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Text("Edit preferences")
+            }
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedButton(
                 onClick = onLogout,
