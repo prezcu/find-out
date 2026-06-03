@@ -1,5 +1,6 @@
 package dev.andrei.app_backend.controller;
 
+import dev.andrei.app_backend.dto.review.MyReviewDto;
 import dev.andrei.app_backend.dto.review.SubmitReviewRequest;
 import dev.andrei.app_backend.model.User;
 import dev.andrei.app_backend.service.ReviewService;
@@ -7,10 +8,13 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -29,5 +33,10 @@ public class ReviewController {
                                              @Valid @RequestBody SubmitReviewRequest request) {
         reviewService.submitReview(user.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<MyReviewDto>> getMyReviews(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(reviewService.getMyReviews(user.getId()));
     }
 }

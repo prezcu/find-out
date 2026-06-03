@@ -25,4 +25,11 @@ public class Attribute {
 
     @Column(name="global_weight", nullable = false)
     private double global_weight;
+
+    // The concept this attribute maps to (for user preferences / match scoring).
+    // Nullable: some attributes may not be linked to a concept. category_id is left
+    // unmapped — it is not needed for scoring.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "concept_id")
+    private AttributeConcept concept;
 }

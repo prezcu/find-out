@@ -40,12 +40,17 @@ public class Review {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    // Weighted mean of this review's attribute scores (score * attribute global_weight) normalised by
+    // the total weight. Persisted (the column is NOT NULL) so it can be read back without recomputing.
+    @Column(name = "average_score", nullable = false)
+    private double averageScore;
+
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReviewAttributeScore> attributeScores = new ArrayList<>();
 
     public Review() {}
 
-    /** Keeps both sides of the relationship in sync. */
+    /** Keeps both sides of the relationship in sync */
     public void addAttributeScore(ReviewAttributeScore attributeScore) {
         attributeScores.add(attributeScore);
         attributeScore.setReview(this);

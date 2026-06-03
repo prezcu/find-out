@@ -7,6 +7,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtService jwtService;
@@ -49,14 +52,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UUID userId = jwtService.parseUserId(token);
             Optional<User> user = userRepository.findById(userId);
 
-            if (user.isPresent() && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (user.isEmpty()) {
+                // Well-formed, correctly-signed token but no such user (e.g. the DB was reset, or the
+                // token was issued by a different deployment/secret). Request stays anonymous -> 401.
+                log.warn("Valid JWT for unknown user id {} on {} {} -> 401",
+                        userId, request.getMethod(), request.getRequestURI());
+            } else if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(user.get(), null, List.of());
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         } catch (Exception e) {
-            // Token invalid or expired -> stay anonymous; downstream rules will 401.
+            // Token invalid, expired, or signed with a different secret -> stay anonymous (downstream 401).
+            log.warn("Rejected JWT on {} {}: {}",
+                    request.getMethod(), request.getRequestURI(), e.toString());
             SecurityContextHolder.clearContext();
         }
 

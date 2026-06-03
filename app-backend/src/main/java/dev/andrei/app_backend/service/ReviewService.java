@@ -1,6 +1,9 @@
 package dev.andrei.app_backend.service;
 
 import dev.andrei.app_backend.dto.review.AttributeRatingDto;
+import dev.andrei.app_backend.dto.review.AttributeScoreDto;
+import dev.andrei.app_backend.dto.review.MyReviewDto;
+import dev.andrei.app_backend.dto.review.ReviewDto;
 import dev.andrei.app_backend.dto.review.SubmitReviewRequest;
 import dev.andrei.app_backend.model.Location;
 import dev.andrei.app_backend.model.LocationAttribute;
@@ -14,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -55,6 +59,12 @@ public class ReviewService {
         review.setContent(request.content() == null ? "" : request.content().trim());
         review.setCreatedAt(Instant.now());
 
+        // Accumulate this review's own weighted average while validating each rating:
+        // averageScore = sum(rating * attribute weight) / sum(weight), mirroring how a location's
+        // overall score is weighted (see recomputeLocationAverage).
+        double weightedSum = 0.0;
+        double weightTotal = 0.0;
+
         for (AttributeRatingDto incoming : request.attributeRatings()) {
             LocationAttribute aggregate = aggregatesByName.get(incoming.attribute());
             if (aggregate == null) {
@@ -66,6 +76,10 @@ public class ReviewService {
                 throw new InvalidReviewException("Rating must be between 0.5 and 5.0 in 0.5 steps");
             }
 
+            double weight = aggregate.getAttribute().getGlobal_weight();
+            weightedSum += rating * weight;
+            weightTotal += weight;
+
             ReviewAttributeScore attributeScore = new ReviewAttributeScore();
             attributeScore.setId(UUID.randomUUID());
             attributeScore.setAttribute(aggregate.getAttribute());
@@ -75,9 +89,58 @@ public class ReviewService {
             applyRatingToAggregate(aggregate, rating);
         }
 
+        // Guard against a zero total weight (e.g. all-zero attribute weights) to avoid NaN.
+        review.setAverageScore(weightTotal > 0 ? weightedSum / weightTotal : 0.0);
+
         reviewRepository.save(review);
         recomputeLocationAverage(location);
         // The Location + LocationAttribute mutations are managed entities, so they flush on commit.
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewDto> getLocationReviews(UUID locationId) {
+        return reviewRepository.findByLocationIdWithScores(locationId).stream()
+                .map(this::toReviewDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyReviewDto> getMyReviews(UUID userId) {
+        return reviewRepository.findByUserIdWithScores(userId).stream()
+                .map(this::toMyReviewDto)
+                .toList();
+    }
+
+    private ReviewDto toReviewDto(Review review) {
+        List<AttributeScoreDto> scores = attributeScores(review);
+        String name = review.getUser().getDisplayName();
+        return new ReviewDto(
+                review.getId(),
+                (name == null || name.isBlank()) ? "Anonymous" : name,
+                review.getContent(),
+                review.getCreatedAt(),
+                review.getAverageScore(),
+                scores
+        );
+    }
+
+    private MyReviewDto toMyReviewDto(Review review) {
+        List<AttributeScoreDto> scores = attributeScores(review);
+        return new MyReviewDto(
+                review.getId(),
+                review.getLocation().getId(),
+                review.getLocation().getName(),
+                review.getContent(),
+                review.getCreatedAt(),
+                review.getAverageScore(),
+                scores
+        );
+    }
+
+    private List<AttributeScoreDto> attributeScores(Review review) {
+        return review.getAttributeScores().stream()
+                .map(s -> new AttributeScoreDto(s.getAttribute().getName(), s.getScore()))
+                .toList();
     }
 
     /** Folds one new rating into a per-attribute running average. */

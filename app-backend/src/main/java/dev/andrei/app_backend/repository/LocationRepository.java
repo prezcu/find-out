@@ -34,6 +34,35 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
             @Param("longitude") double longitude
     );
 
+    // Match scoring: all candidate ids within a variable radius (meters). No average_score
+    // pre-sort/limit here -- the service ranks by per-user match score, not global rating.
+    @Query(value = """
+        SELECT l.id
+        FROM location l
+        WHERE ST_DWithin(
+            l.coordinate_point::geography,
+            ST_MakePoint(:longitude, :latitude)::geography,
+            :radiusMeters
+        )
+        """, nativeQuery = true)
+    List<UUID> findLocationIdsWithinRadius(
+            @Param("latitude") double latitude,
+            @Param("longitude") double longitude,
+            @Param("radiusMeters") double radiusMeters
+    );
+
+    // Like findAllWithAttributesByIdIn but also fetches each attribute's concept,
+    // needed to map location attributes onto the user's concept-level preferences.
+    @Query("""
+        SELECT DISTINCT l
+        FROM Location l
+        LEFT JOIN FETCH l.locationAttributes la
+        LEFT JOIN FETCH la.attribute a
+        LEFT JOIN FETCH a.concept
+        WHERE l.id IN :ids
+        """)
+    List<Location> findAllWithAttributesAndConceptByIdIn(@Param("ids") List<UUID> ids);
+
     // Step 2: hydrate locations + their attribute graph in one SELECT.
     // LEFT JOIN so locations without attributes still come back. DISTINCT
     // collapses the row multiplication caused by the one-to-many fetch.

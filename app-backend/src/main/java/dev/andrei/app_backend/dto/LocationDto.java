@@ -5,4 +5,6 @@ import java.util.UUID;
 
 public record LocationDto(UUID id, String name, String primaryCategory,
                           double longitude, double latitude,boolean hasToilets,
-                          boolean hasAccessibilityFeatures, double averageScore, List<String> attributes) {}
+                          boolean hasAccessibilityFeatures, double averageScore, List<String> attributes,
+                          // Per-user match score (0–5) when ranked by preferences; null otherwise.
+                          Double matchScore) {}

@@ -28,6 +28,10 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    // Nullable: existing users predate this column. Shown as the reviewer name on reviews.
+    @Column(name = "display_name")
+    private String displayName;
+
     public User() {}
 
     public User(UUID id, String email, String passwordHash, Instant createdAt) {

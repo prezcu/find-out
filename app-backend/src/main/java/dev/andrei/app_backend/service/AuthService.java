@@ -26,7 +26,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse register(String email, String rawPassword) {
+    public AuthResponse register(String email, String rawPassword, String displayName) {
         String normalisedEmail = email.toLowerCase();
 
         if (userRepository.existsByEmail(normalisedEmail)) {
@@ -39,6 +39,7 @@ public class AuthService {
                 passwordEncoder.encode(rawPassword),
                 Instant.now()
         );
+        user.setDisplayName(displayName == null ? null : displayName.trim());
         userRepository.save(user);
 
         return issue(user);
