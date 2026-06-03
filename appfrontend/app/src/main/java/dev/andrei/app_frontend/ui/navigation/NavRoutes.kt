@@ -1,6 +1,7 @@
 package dev.andrei.app_frontend.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -32,6 +33,12 @@ data object ProfileRoute :  TopLevelRoute {
     override val icon get() = Icons.Filled.Person
 }
 
+@Serializable
+data object SavedRoute : TopLevelRoute {
+    override val label get() = "Saved"
+    override val icon get() = Icons.Filled.Favorite
+}
+
 @Serializable object LoginRoute
 
 @Serializable object RegisterRoute
@@ -43,4 +50,4 @@ data object ProfileRoute :  TopLevelRoute {
 // same thing
 @Serializable data class WriteReviewRoute (val locationId: String)
 
-val topLevelRoutes = listOf(LandingRoute, SearchRoute, ProfileRoute)
+val topLevelRoutes = listOf(LandingRoute, SearchRoute, SavedRoute, ProfileRoute)

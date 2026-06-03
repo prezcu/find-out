@@ -19,6 +19,7 @@ import dev.andrei.app_frontend.ui.screen.LoginScreen
 import dev.andrei.app_frontend.ui.screen.ProfileScreen
 import dev.andrei.app_frontend.ui.screen.RegisterScreen
 import dev.andrei.app_frontend.ui.screen.SearchScreen
+import dev.andrei.app_frontend.ui.screen.WishlistScreen
 import dev.andrei.app_frontend.ui.screen.WriteReviewScreen
 import dev.andrei.app_frontend.ui.viewmodel.AppAuthViewModel
 
@@ -79,6 +80,19 @@ fun AppNavHost(authViewModel: AppAuthViewModel = hiltViewModel()) {
                 SearchScreen(
                     onLocationClick = { locationId ->
                         navController.navigate(AttractionDetailRoute(locationId))
+                    }
+                )
+            }
+
+            composable<SavedRoute> {
+                WishlistScreen(
+                    onLocationClick = { locationId ->
+                        navController.navigate(AttractionDetailRoute(locationId))
+                    },
+                    onSignIn = {
+                        navController.navigate(LoginRoute) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }

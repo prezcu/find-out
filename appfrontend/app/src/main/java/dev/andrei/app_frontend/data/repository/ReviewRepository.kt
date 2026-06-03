@@ -1,5 +1,7 @@
 package dev.andrei.app_frontend.data.repository
 
+import dev.andrei.app_frontend.data.remote.dto.MyReviewDto
+import dev.andrei.app_frontend.data.remote.dto.ReviewDto
 import dev.andrei.app_frontend.data.remote.dto.SubmitReviewRequestDto
 
 interface ReviewRepository {
@@ -10,4 +12,10 @@ interface ReviewRepository {
      * user-facing message on any error.
      */
     suspend fun submitReview(request: SubmitReviewRequestDto): Result<Unit>
+
+    /** The reviews shown on a location's public detail page, newest first. */
+    suspend fun getLocationReviews(locationId: String): Result<List<ReviewDto>>
+
+    /** The current (signed-in) user's own reviews, newest first. */
+    suspend fun getMyReviews(): Result<List<MyReviewDto>>
 }

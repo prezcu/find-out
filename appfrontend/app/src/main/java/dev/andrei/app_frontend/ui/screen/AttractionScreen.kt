@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
+import dev.andrei.app_frontend.data.remote.dto.ReviewDto
 import dev.andrei.app_frontend.ui.viewmodel.AttractionScreenViewModel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -28,9 +30,12 @@ fun AttractionScreen(
     onBack: () -> Unit,
     viewModel: AttractionScreenViewModel = hiltViewModel()
 ) {
-    viewModel.updateLogInState()
+    LaunchedEffect(Unit) { viewModel.updateLogInState() }
     val location by viewModel.location.collectAsStateWithLifecycle()
     val logInState by viewModel.logInState.collectAsStateWithLifecycle()
+    val isWishlisted by viewModel.isWishlisted.collectAsStateWithLifecycle()
+    val wishlistBusy by viewModel.wishlistBusy.collectAsStateWithLifecycle()
+    val reviews by viewModel.reviews.collectAsStateWithLifecycle()
 
     val routeDestination = if (logInState) onWriteReview else onSignIn
 
@@ -41,6 +46,16 @@ fun AttractionScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (logInState) {
+                        IconButton(onClick = viewModel::toggleWishlist, enabled = !wishlistBusy) {
+                            Icon(
+                                imageVector = if (isWishlisted) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (isWishlisted) "Remove from wishlist" else "Add to wishlist"
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -58,13 +73,19 @@ fun AttractionScreen(
                     CircularProgressIndicator()
                 }
             }
-            else -> AttractionDetail(loc,logInState, routeDestination, Modifier.padding(padding))
+            else -> AttractionDetail(loc, logInState, routeDestination, reviews, Modifier.padding(padding))
         }
     }
 }
 
 @Composable
-private fun AttractionDetail(location: LocationEntity, loggedIn: Boolean, route: () -> Unit, modifier: Modifier = Modifier) {
+private fun AttractionDetail(
+    location: LocationEntity,
+    loggedIn: Boolean,
+    route: () -> Unit,
+    reviews: List<ReviewDto>,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -148,6 +169,76 @@ private fun AttractionDetail(location: LocationEntity, loggedIn: Boolean, route:
                 .height(48.dp)
         ) {
             Text(if (loggedIn) "Write a review" else "Sign in to review")
+        }
+
+        HorizontalDivider()
+
+        // --- Reviews ---
+        DetailSection(title = "Reviews") {
+            if (reviews.isEmpty()) {
+                Text(
+                    text = "No reviews yet. Be the first to review.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                reviews.forEach { review ->
+                    ReviewCard(review)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReviewCard(review: ReviewDto) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = review.reviewerDisplayName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = "%.1f".format(review.overallScore),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+            if (review.attributeScores.isNotEmpty()) {
+                Text(
+                    text = review.attributeScores.joinToString("   •   ") {
+                        "${it.attribute} ${"%.1f".format(it.score)}"
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (review.content.isNotBlank()) {
+                Text(
+                    text = review.content,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Text(
+                text = review.createdAt.take(10),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
