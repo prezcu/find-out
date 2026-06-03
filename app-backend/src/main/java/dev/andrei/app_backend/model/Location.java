@@ -38,6 +38,11 @@ public class Location {
     @Column(name = "primary_category", nullable = false)
     private String primary_category;
 
+    // UI-friendly category label. Nullable: the client falls back to a prettified
+    // primary_category when absent.
+    @Column(name = "primary_category_display_name")
+    private String primaryCategoryDisplayName;
+
     @Column(name = "coordinate_point", columnDefinition = "geography(Point, 4326)", nullable = false)
     private Point coordinate_point;
 

@@ -139,7 +139,9 @@ public class ReviewService {
 
     private List<AttributeScoreDto> attributeScores(Review review) {
         return review.getAttributeScores().stream()
-                .map(s -> new AttributeScoreDto(s.getAttribute().getName(), s.getScore()))
+                .map(s -> new AttributeScoreDto(
+                        s.getAttribute().getName(),
+                        s.getScore()))
                 .toList();
     }
 
