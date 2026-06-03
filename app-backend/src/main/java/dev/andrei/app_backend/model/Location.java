@@ -2,8 +2,11 @@ package dev.andrei.app_backend.model;
 
 import dev.andrei.app_backend.service.TextNormalizer;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -58,6 +61,8 @@ public class Location {
     @Column(name = "updated_at", nullable = false)
     private Instant updated_at;
 
+    // numeric column kept exact; declare the JDBC type so validation expects NUMERIC, not float.
+    @JdbcTypeCode(SqlTypes.NUMERIC)
     @Column(name = "average_score")
     private Double average_score;
 
@@ -66,6 +71,21 @@ public class Location {
 
     @Column(name = "website_url")
     private String website_url;
+
+    // --- Google Place Photos (resolved lazily, then persisted; see GooglePlacesPhotoService) ---
+
+    @Column(name = "google_place_id")
+    private String googlePlaceId;
+
+    // Google Places (New) photos, ordered by photo_index. Owned by this location (cascade + orphan
+    // removal): resolving photos replaces the set, deleting the location deletes its photo rows.
+    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("photoIndex ASC")
+    private List<LocationPhoto> photos = new ArrayList<>();
+
+    // Set on a successful resolve AND when the search returns nothing -> negative cache.
+    @Column(name = "photos_fetched_at")
+    private Instant photosFetchedAt;
 
     @OneToMany(mappedBy = "location")
     private Set<LocationAttribute> locationAttributes;

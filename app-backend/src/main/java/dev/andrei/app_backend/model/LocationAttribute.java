@@ -4,6 +4,8 @@ package dev.andrei.app_backend.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.util.UUID;
 
 @Entity
@@ -17,6 +19,8 @@ public class LocationAttribute {
     @Id
     private UUID id;
 
+    // numeric column kept exact; declare the JDBC type so validation expects NUMERIC, not float.
+    @JdbcTypeCode(SqlTypes.NUMERIC)
     @Column(name="average_score", nullable = false)
     private Double average_score;
 

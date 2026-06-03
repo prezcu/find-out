@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     // material3 1.4.0+ no longer pulls material-icons-core transitively; declare it explicitly
     implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -95,4 +97,8 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     // kotlinx-serialization JSON runtime (used by Room TypeConverters and type-safe navigation)
     implementation(libs.kotlinx.serialization.json)
+    // Coil 3 — async image loading for Compose (location card thumbnails + attraction carousel).
+    // The okhttp network layer follows the backend's 302 redirect to the key-less Google image URL.
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 }

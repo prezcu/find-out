@@ -15,4 +15,10 @@ interface LocationRepository {
     fun getLocationById(id: UUID): Flow<LocationEntity?>
 
     suspend fun searchLocationsByName(query: String): Result<List<LocationEntity>>
+
+    /**
+     * Absolute, ready-to-load photo URLs for a location's carousel. Empty when the location has no
+     * photos (or the backend has no Google key configured). Never throws.
+     */
+    suspend fun getPhotoUrls(locationId: String): List<String>
 }

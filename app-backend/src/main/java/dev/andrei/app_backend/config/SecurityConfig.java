@@ -39,6 +39,8 @@ public class SecurityConfig {
                                 "/api/locations/nearby",
                                 "/api/locations/search",
                                 "/api/locations/*/reviews",
+                                "/api/locations/*/photos",
+                                "/api/locations/*/photo",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"

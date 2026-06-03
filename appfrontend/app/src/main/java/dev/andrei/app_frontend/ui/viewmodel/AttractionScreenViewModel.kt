@@ -24,7 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AttractionScreenViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    locationRepository: LocationRepository,
+    private val locationRepository: LocationRepository,
     private val authRepository: AuthRepository,
     private val wishlistRepository: WishlistRepository,
     private val reviewRepository: ReviewRepository
@@ -48,6 +48,10 @@ class AttractionScreenViewModel @Inject constructor(
     private val _reviews = MutableStateFlow<List<ReviewDto>>(emptyList())
     val reviews = _reviews.asStateFlow()
 
+    // Absolute Google photo URLs for the hero carousel; empty when the location has no photos.
+    private val _photoUrls = MutableStateFlow<List<String>>(emptyList())
+    val photoUrls = _photoUrls.asStateFlow()
+
     val location: StateFlow<LocationEntity?> = locationRepository
         .getLocationById(locationId)
         .stateIn(
@@ -57,8 +61,9 @@ class AttractionScreenViewModel @Inject constructor(
         )
 
     init {
-        // A location's reviews are public, so they can load regardless of auth.
+        // A location's reviews and photos are public, so they can load regardless of auth.
         loadReviews()
+        loadPhotos()
     }
 
     /**
@@ -100,6 +105,12 @@ class AttractionScreenViewModel @Inject constructor(
         viewModelScope.launch {
             reviewRepository.getLocationReviews(locationIdArg)
                 .onSuccess { _reviews.value = it }
+        }
+    }
+
+    private fun loadPhotos() {
+        viewModelScope.launch {
+            _photoUrls.value = locationRepository.getPhotoUrls(locationIdArg)
         }
     }
 }

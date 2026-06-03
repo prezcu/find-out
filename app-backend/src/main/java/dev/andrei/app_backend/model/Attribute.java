@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Immutable;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.Set;
 import java.util.UUID;
@@ -23,6 +25,9 @@ public class Attribute {
     @Column(name="name", nullable = false)
     private String name;
 
+    // DB column is numeric (exact, kept on purpose for scores/weights); keep the Java field a double
+    // and declare the JDBC type so Hibernate schema validation expects NUMERIC instead of float.
+    @JdbcTypeCode(SqlTypes.NUMERIC)
     @Column(name="global_weight", nullable = false)
     private double global_weight;
 

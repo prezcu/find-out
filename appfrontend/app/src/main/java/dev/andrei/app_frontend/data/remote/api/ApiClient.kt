@@ -3,6 +3,7 @@ package dev.andrei.app_frontend.data.remote.api
 import dev.andrei.app_frontend.data.remote.dto.AddWishlistRequestDto
 import dev.andrei.app_frontend.data.remote.dto.JustCoordinatesDto
 import dev.andrei.app_frontend.data.remote.dto.LocationDto
+import dev.andrei.app_frontend.data.remote.dto.LocationPhotosDto
 import dev.andrei.app_frontend.data.remote.dto.MyReviewDto
 import dev.andrei.app_frontend.data.remote.dto.ReviewDto
 import dev.andrei.app_frontend.data.remote.dto.SubmitReviewRequestDto
@@ -52,6 +53,12 @@ interface ApiService {
     suspend fun searchLocationsByName(
         @Query("q") query: String
     ): Response<List<LocationDto>>
+
+    // Public: how many Google photos this location has. The client builds /photo?index=N URLs from it.
+    @GET("/api/locations/{id}/photos")
+    suspend fun getLocationPhotoCount(
+        @Path("id") id: String
+    ): Response<LocationPhotosDto>
 
     @POST("/auth/register")
     suspend fun register(

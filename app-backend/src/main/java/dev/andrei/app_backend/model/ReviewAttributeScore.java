@@ -3,6 +3,8 @@ package dev.andrei.app_backend.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
 
@@ -24,6 +26,8 @@ public class ReviewAttributeScore {
     @JoinColumn(name = "attribute_id", nullable = false)
     private Attribute attribute;
 
+    // numeric column kept exact; declare the JDBC type so validation expects NUMERIC, not float.
+    @JdbcTypeCode(SqlTypes.NUMERIC)
     @Column(name = "score", nullable = false)
     private double score;
 

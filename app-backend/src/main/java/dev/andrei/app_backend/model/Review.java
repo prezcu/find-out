@@ -3,6 +3,8 @@ package dev.andrei.app_backend.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,6 +44,8 @@ public class Review {
 
     // Weighted mean of this review's attribute scores (score * attribute global_weight) normalised by
     // the total weight. Persisted (the column is NOT NULL) so it can be read back without recomputing.
+    // numeric column kept exact; declare the JDBC type so validation expects NUMERIC, not float.
+    @JdbcTypeCode(SqlTypes.NUMERIC)
     @Column(name = "average_score", nullable = false)
     private double averageScore;
 

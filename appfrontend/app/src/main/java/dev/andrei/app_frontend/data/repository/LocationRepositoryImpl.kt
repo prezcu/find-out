@@ -8,6 +8,7 @@ import com.google.android.gms.tasks.CancellationToken
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.andrei.app_frontend.data.local.dao.LocationDao
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
+import dev.andrei.app_frontend.data.remote.ApiConfig
 import dev.andrei.app_frontend.data.remote.api.ApiService
 import dev.andrei.app_frontend.data.remote.dto.JustCoordinatesDto
 import kotlinx.coroutines.flow.Flow
@@ -53,6 +54,22 @@ class LocationRepositoryImpl @Inject constructor(
     }
 
     override fun getLocationById(id: UUID): Flow<LocationEntity?> = dao.getLocationById(id)
+
+    override suspend fun getPhotoUrls(locationId: String): List<String> {
+        return try {
+            val response = api.getLocationPhotoCount(locationId)
+            val count = response.body()?.count ?: 0
+            if (!response.isSuccessful || count <= 0) {
+                emptyList()
+            } else {
+                // The backend serves each photo at /photo?index=N; build one URL per index.
+                List(count) { index -> ApiConfig.photoUrl(locationId, index) }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
 
     override suspend fun searchLocationsByName(query: String): Result<List<LocationEntity>> {
         return runCatching {

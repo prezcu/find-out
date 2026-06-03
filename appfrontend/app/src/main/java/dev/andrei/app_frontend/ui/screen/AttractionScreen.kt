@@ -1,7 +1,12 @@
 package dev.andrei.app_frontend.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -13,10 +18,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
 import dev.andrei.app_frontend.data.remote.dto.ReviewDto
 import dev.andrei.app_frontend.ui.util.displayLabel
@@ -37,6 +46,7 @@ fun AttractionScreen(
     val isWishlisted by viewModel.isWishlisted.collectAsStateWithLifecycle()
     val wishlistBusy by viewModel.wishlistBusy.collectAsStateWithLifecycle()
     val reviews by viewModel.reviews.collectAsStateWithLifecycle()
+    val photoUrls by viewModel.photoUrls.collectAsStateWithLifecycle()
 
     val routeDestination = if (logInState) onWriteReview else onSignIn
 
@@ -74,7 +84,7 @@ fun AttractionScreen(
                     CircularProgressIndicator()
                 }
             }
-            else -> AttractionDetail(loc, logInState, routeDestination, reviews, Modifier.padding(padding))
+            else -> AttractionDetail(loc, logInState, routeDestination, reviews, photoUrls, Modifier.padding(padding))
         }
     }
 }
@@ -85,6 +95,7 @@ private fun AttractionDetail(
     loggedIn: Boolean,
     route: () -> Unit,
     reviews: List<ReviewDto>,
+    photoUrls: List<String>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -94,6 +105,11 @@ private fun AttractionDetail(
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        // --- Photo carousel --- (only when this location has photos)
+        if (photoUrls.isNotEmpty()) {
+            PhotoCarousel(photoUrls)
+        }
+
         // --- Hero ---
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -185,6 +201,56 @@ private fun AttractionDetail(
             } else {
                 reviews.forEach { review ->
                     ReviewCard(review)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Swipeable hero carousel. Each page loads a Google photo over a cream placeholder, so a slow or
+ * failed image still reads as intentional. A row of dots tracks the current page when there's more
+ * than one photo. Only rendered by the caller when [photoUrls] is non-empty.
+ */
+@Composable
+private fun PhotoCarousel(photoUrls: List<String>) {
+    val pagerState = rememberPagerState(pageCount = { photoUrls.size })
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+        ) { page ->
+            AsyncImage(
+                model = photoUrls[page],
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFEFE7D8)) // cream placeholder behind the image
+            )
+        }
+
+        if (photoUrls.size > 1) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                repeat(photoUrls.size) { index ->
+                    val selected = pagerState.currentPage == index
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp)
+                            .size(if (selected) 8.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                            )
+                    )
                 }
             }
         }
