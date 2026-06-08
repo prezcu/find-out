@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
+import dev.andrei.app_frontend.data.remote.dto.AttributeDto
 import dev.andrei.app_frontend.data.remote.dto.ReviewDto
 import dev.andrei.app_frontend.data.repository.LocationRepository
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,7 +19,7 @@ import dev.andrei.app_frontend.data.repository.ReviewRepository
 import dev.andrei.app_frontend.data.repository.WishlistRepository
 import dev.andrei.app_frontend.ui.components.LedgerEntry
 import dev.andrei.app_frontend.ui.navigation.AttractionDetailRoute
-import dev.andrei.app_frontend.ui.util.displayLabel
+import dev.andrei.app_frontend.ui.util.prettifyLabel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -70,12 +71,12 @@ class AttractionScreenViewModel @Inject constructor(
         )
 
     /**
-     * The attribute ledger: each taste concept paired with this venue's measured average for that
-     * attribute (aggregated from its reviews) and the user's weight. Recomputed when either the
-     * reviews or the weights change. Sorted by weight desc (then score desc).
+     * The attribute ledger: this venue's own attributes, each with its measured average score (from
+     * the location's attribute aggregates) and the user's weight for the attribute's concept.
+     * Recomputed when either the location or the weights change. Sorted by weight desc (then score desc).
      */
-    val ledger: StateFlow<List<LedgerEntry>> = combine(_reviews, _concepts) { reviews, concepts ->
-        buildLedger(reviews, concepts)
+    val ledger: StateFlow<List<LedgerEntry>> = combine(location, _concepts) { loc, concepts ->
+        buildLedger(loc?.attributes.orEmpty(), concepts)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -145,33 +146,24 @@ class AttractionScreenViewModel @Inject constructor(
     }
 
     /**
-     * Derives the ledger rows. With taste concepts present, every concept is a row (joining its
-     * average score by [AttributeConceptDto.slug] == [AttributeScoreDto.attribute]); without them,
-     * we fall back to whichever attributes the reviews actually scored.
+     * Derives the ledger rows from this venue's own attributes: each row's score is the attribute's
+     * average, and its weight is the user's importance for the attribute's concept (joined by
+     * [AttributeDto.conceptSlug] == [AttributeConceptDto.slug]; 0 when unmapped or no preferences).
+     * Sorted by weight desc, then score desc.
      */
     private fun buildLedger(
-        reviews: List<ReviewDto>,
+        attributes: List<AttributeDto>,
         concepts: List<AttributeConceptDto>
     ): List<LedgerEntry> {
-        val flat = reviews.flatMap { it.attributeScores }
-        val avgByKey = flat.groupBy { it.attribute }
-            .mapValues { (_, v) -> v.map { it.score }.average().toFloat() }
-
-        return if (concepts.isNotEmpty()) {
-            concepts.map { concept ->
-                LedgerEntry(
-                    name = displayLabel(concept.displayName, concept.slug),
-                    weight = concept.importance,
-                    score = avgByKey[concept.slug]
-                )
-            }.sortedWith(
-                compareByDescending<LedgerEntry> { it.weight }.thenByDescending { it.score ?: -1f }
+        val importanceBySlug = concepts.associate { it.slug to it.importance }
+        return attributes.map { attr ->
+            LedgerEntry(
+                name = prettifyLabel(attr.name),
+                weight = importanceBySlug[attr.conceptSlug] ?: 0,
+                score = attr.averageScore.toFloat()
             )
-        } else {
-            val nameByKey = flat.associate { it.attribute to it.displayName }
-            avgByKey.entries
-                .map { (key, score) -> LedgerEntry(displayLabel(nameByKey[key], key), 0, score) }
-                .sortedByDescending { it.score ?: -1f }
-        }
+        }.sortedWith(
+            compareByDescending<LedgerEntry> { it.weight }.thenByDescending { it.score ?: -1f }
+        )
     }
 }

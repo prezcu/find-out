@@ -409,7 +409,7 @@ fun LedgerRow(entry: LedgerEntry, modifier: Modifier = Modifier) {
     }
 }
 
-// ── Misc helpers ───────────────────────────────────────────────────────────────────────────
+// ── Misc helpers
 
 /**
  * A deterministic field-guide catalogue code (e.g. "044-A") derived from a venue id. Purely

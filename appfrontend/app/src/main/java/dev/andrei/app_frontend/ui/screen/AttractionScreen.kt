@@ -53,6 +53,7 @@ import dev.andrei.app_frontend.ui.theme.FindoutType
 import dev.andrei.app_frontend.ui.util.displayLabel
 import dev.andrei.app_frontend.ui.viewmodel.AttractionScreenViewModel
 import kotlin.math.roundToInt
+import androidx.core.net.toUri
 
 @Composable
 fun AttractionScreen(
@@ -218,10 +219,9 @@ fun AttractionScreen(
             saved = loggedIn && isWishlisted,
             onSave = { if (loggedIn) viewModel.toggleWishlist() else onSignIn() },
             onDirections = {
-                val uri = Uri.parse(
-                    "geo:${loc.latitude},${loc.longitude}?q=${loc.latitude},${loc.longitude}" +
-                        "(${Uri.encode(loc.name)})"
-                )
+                val uri =
+                    ("geo:${loc.latitude},${loc.longitude}?q=${loc.latitude},${loc.longitude}" +
+                            "(${Uri.encode(loc.name)})").toUri()
                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
             }
         )
