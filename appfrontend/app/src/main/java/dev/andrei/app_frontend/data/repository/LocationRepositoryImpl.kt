@@ -11,10 +11,9 @@ import dev.andrei.app_frontend.data.local.entity.LocationEntity
 import dev.andrei.app_frontend.data.remote.ApiConfig
 import dev.andrei.app_frontend.data.remote.api.ApiService
 import dev.andrei.app_frontend.data.remote.dto.JustCoordinatesDto
+import dev.andrei.app_frontend.data.remote.dto.LocationDto
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onStart
+import retrofit2.Response
 import java.util.UUID
 import javax.inject.Inject
 
@@ -24,33 +23,27 @@ class LocationRepositoryImpl @Inject constructor(
     private val api: ApiService,
 ): LocationRepository {
 
-    override fun getTop10CloseLocations(deviceLongitude: Double, deviceLatitude: Double): Flow<List<LocationEntity>> {
-        return dao.getLocationsOrderedByName()
-            .onStart {
-                refreshLocations(deviceLongitude, deviceLatitude)
-            }
-            .catch {
-                e -> emit(emptyList())
-            }
-    }
+    override suspend fun getTopRatedLocations(deviceLongitude: Double, deviceLatitude: Double): Result<List<LocationEntity>> =
+        fetchLocations { api.fetchTop10CloseLocations(JustCoordinatesDto(deviceLatitude, deviceLongitude)) }
 
-    override fun getRecommendedLocations(deviceLongitude: Double, deviceLatitude: Double): Flow<List<LocationEntity>> = flow {
-        val request = JustCoordinatesDto(deviceLatitude, deviceLongitude)
-        val response = api.fetchRecommendedLocations(request)
-        if (response.isSuccessful && response.body() != null) {
-            val entities = response.body()!!.map { it.toEntity() }
-            // Persist so the detail screen (which reads by id from Room) can resolve these.
-            // We still emit the in-match-order list directly, so the landing ranking is preserved.
-            if (entities.isNotEmpty()) {
-                dao.insertLocations(entities)
-            }
-            emit(entities)
-        } else {
-            emit(emptyList())
+    override suspend fun getRecommendedLocations(deviceLongitude: Double, deviceLatitude: Double): Result<List<LocationEntity>> =
+        fetchLocations { api.fetchRecommendedLocations(JustCoordinatesDto(deviceLatitude, deviceLongitude)) }
+
+    // Shared shape for the landing lists: call the endpoint, keep the server order, and upsert into
+    // Room (without clearing) so the detail screen can resolve any card by id. The two lists coexist
+    // for a signed-in user, so clearing here would wipe the other list's rows. Mirrors searchLocationsByName.
+    private suspend fun fetchLocations(
+        call: suspend () -> Response<List<LocationDto>>
+    ): Result<List<LocationEntity>> = runCatching {
+        val response = call()
+        if (!response.isSuccessful) {
+            error("Request failed: ${response.code()}")
         }
-    }.catch {
-        it.printStackTrace()
-        emit(emptyList())
+        val entities = response.body().orEmpty().map { it.toEntity() }
+        if (entities.isNotEmpty()) {
+            dao.insertLocations(entities)
+        }
+        entities
     }
 
     override fun getLocationById(id: UUID): Flow<LocationEntity?> = dao.getLocationById(id)
@@ -82,28 +75,6 @@ class LocationRepositoryImpl @Inject constructor(
                 dao.insertLocations(entities)
             }
             entities
-        }
-    }
-
-    private suspend fun  refreshLocations(deviceLongitude: Double, deviceLatitude: Double) {
-        try {
-            dao.clearLocations()
-
-            val request = JustCoordinatesDto(deviceLatitude, deviceLongitude)
-            val response = api.fetchTop10CloseLocations(request)
-
-            if (response.isSuccessful && response.body() != null){
-                //TODO: Handle empty body case, assign body to local val
-                val toSaveEntities = response.body()!!.map { it.toEntity() }
-
-                dao.insertLocations(toSaveEntities)
-            }
-
-
-
-        }
-        catch (e: Exception){
-            e.printStackTrace()
         }
     }
 }

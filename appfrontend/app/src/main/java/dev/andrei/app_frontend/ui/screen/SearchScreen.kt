@@ -30,7 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.ui.components.FindoutTextField
 import dev.andrei.app_frontend.ui.components.Kicker
-import dev.andrei.app_frontend.ui.components.SearchSuggestionDropdown
+import dev.andrei.app_frontend.ui.components.SearchSuggestionList
 import dev.andrei.app_frontend.ui.components.SectionRule
 import dev.andrei.app_frontend.ui.components.SpecimenCard
 import dev.andrei.app_frontend.ui.state.SearchUiState
@@ -50,7 +50,9 @@ fun SearchScreen(
     val focusManager = LocalFocusManager.current
     var isFocused by remember { mutableStateOf(false) }
 
-    val showSuggestions = isFocused && query.isNotBlank() && suggestions.isNotEmpty()
+    // While the field is focused with a non-blank query, the screen shows the compact suggestion
+    // list instead of the result cards (mutually exclusive — no overlap, no duplicate listing).
+    val inSearchMode = isFocused && query.isNotBlank()
 
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp)) {
@@ -79,57 +81,70 @@ fun SearchScreen(
                     }
                 } else null
             )
-            // Anchored directly below the field; floats over the result cards while typing.
-            if (showSuggestions) {
-                SearchSuggestionDropdown(
-                    suggestions = suggestions,
-                    onPick = { location ->
-                        viewModel.dismissSuggestions()
-                        focusManager.clearFocus()
-                        onLocationClick(location.id.toString())
-                    }
-                )
-            }
             Spacer(Modifier.height(16.dp))
         }
 
-        when (val state = uiState) {
-            is SearchUiState.Idle ->
-                Hint("Start typing a name or type — results appear as you go.")
+        if (inSearchMode) {
+            // Typing: compact suggestion list only (or a loading/empty hint while it resolves).
+            when {
+                suggestions.isNotEmpty() ->
+                    SearchSuggestionList(
+                        suggestions = suggestions,
+                        onPick = { location ->
+                            viewModel.dismissSuggestions()
+                            focusManager.clearFocus()
+                            onLocationClick(location.id.toString())
+                        },
+                        modifier = Modifier.padding(horizontal = 22.dp)
+                    )
 
-            is SearchUiState.Loading ->
-                Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = c.accent)
-                }
+                uiState is SearchUiState.Loading ->
+                    Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = c.accent)
+                    }
 
-            is SearchUiState.Error ->
-                Hint("Something went wrong: ${state.message}")
+                else ->
+                    Hint("No matches for “$query”.")
+            }
+        } else {
+            when (val state = uiState) {
+                is SearchUiState.Idle ->
+                    Hint("Start typing a name or type — results appear as you go.")
 
-            is SearchUiState.Success -> {
-                val count = state.results.size
-                Text(
-                    text = buildString {
-                        append("$count ")
-                        append(if (count == 1) "RESULT" else "RESULTS")
-                        if (query.isNotBlank()) append(" · “$query”")
-                    },
-                    style = FindoutType.kicker.copy(fontSize = 9.5.sp, letterSpacing = 1.5.sp),
-                    color = c.faint,
-                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp)
-                )
-                if (state.results.isEmpty()) {
-                    Hint("Nothing matches “$query”. Try a café name or a neighbourhood.")
-                } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(start = 22.dp, end = 22.dp, bottom = 6.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(state.results, key = { it.id }) { location ->
-                            SpecimenCard(
-                                location = location,
-                                onOpen = { onLocationClick(location.id.toString()) },
-                                photoHeight = 170.dp
-                            )
+                is SearchUiState.Loading ->
+                    Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = c.accent)
+                    }
+
+                is SearchUiState.Error ->
+                    Hint("Something went wrong: ${state.message}")
+
+                is SearchUiState.Success -> {
+                    val count = state.results.size
+                    Text(
+                        text = buildString {
+                            append("$count ")
+                            append(if (count == 1) "RESULT" else "RESULTS")
+                            if (query.isNotBlank()) append(" · “$query”")
+                        },
+                        style = FindoutType.kicker.copy(fontSize = 9.5.sp, letterSpacing = 1.5.sp),
+                        color = c.faint,
+                        modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp)
+                    )
+                    if (state.results.isEmpty()) {
+                        Hint("Nothing matches “$query”. Try a café name or a neighbourhood.")
+                    } else {
+                        LazyColumn(
+                            contentPadding = PaddingValues(start = 22.dp, end = 22.dp, bottom = 6.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(state.results, key = { it.id }) { location ->
+                                SpecimenCard(
+                                    location = location,
+                                    onOpen = { onLocationClick(location.id.toString()) },
+                                    photoHeight = 170.dp
+                                )
+                            }
                         }
                     }
                 }

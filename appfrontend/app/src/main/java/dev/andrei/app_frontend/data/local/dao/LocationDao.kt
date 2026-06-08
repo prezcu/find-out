@@ -13,12 +13,6 @@ interface LocationDao {
     @Upsert
     suspend fun insertLocations(locations: List<LocationEntity>)
 
-    @Query("DELETE FROM location")
-    suspend fun clearLocations()
-
-    @Query("SELECT * FROM location ORDER BY averageScore DESC LIMIT 10;")
-    fun getLocationsOrderedByName(): Flow<List<LocationEntity>>
-
     @Query("SELECT * FROM location WHERE id = :id")
     fun getLocationById(id: UUID): Flow<LocationEntity?>
 }

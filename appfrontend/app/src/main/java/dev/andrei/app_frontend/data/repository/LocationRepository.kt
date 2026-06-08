@@ -6,11 +6,13 @@ import java.util.UUID
 
 interface LocationRepository {
 
-    fun getTop10CloseLocations(deviceLongitude: Double, deviceLatitude: Double): Flow<List<LocationEntity>>
+    // Rating-sorted nearby list, in server order. Single-shot: a Result so a genuine network
+    // failure can surface as an error state (rather than being swallowed into an empty list).
+    suspend fun getTopRatedLocations(deviceLongitude: Double, deviceLatitude: Double): Result<List<LocationEntity>>
 
-    // Personalized match-ranked list. Emits the server order directly (no Room cache,
-    // which would re-sort by averageScore and lose the match ranking).
-    fun getRecommendedLocations(deviceLongitude: Double, deviceLatitude: Double): Flow<List<LocationEntity>>
+    // Personalized match-ranked list, in server order (so the match ranking is preserved).
+    // Single-shot Result for the same reason as getTopRatedLocations.
+    suspend fun getRecommendedLocations(deviceLongitude: Double, deviceLatitude: Double): Result<List<LocationEntity>>
 
     fun getLocationById(id: UUID): Flow<LocationEntity?>
 

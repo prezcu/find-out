@@ -17,53 +17,39 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
 import dev.andrei.app_frontend.ui.theme.FindoutTheme
 import dev.andrei.app_frontend.ui.theme.FindoutType
 import dev.andrei.app_frontend.ui.util.displayLabel
 
 /**
- * Autocomplete dropdown of venue suggestions, shown beneath the search field while typing. Rendered
- * as a [Popup] so it floats over the live result cards. Anchored at its composition position (place
- * it directly under the text field). [focusable] is false so the keyboard stays up as the user types.
- *
- * Each row opens the venue via [onPick]. Width is matched to the screen content width (22.dp side
- * padding) since a Popup escapes the parent's layout constraints.
+ * Compact, in-flow autocomplete list shown beneath the search field while the user is typing. Unlike
+ * a floating dropdown it occupies normal layout space, so it never overlaps the result cards — the
+ * screen shows this OR the cards, never both. Each row opens the venue via [onPick].
  */
 @Composable
-fun SearchSuggestionDropdown(
+fun SearchSuggestionList(
     suggestions: List<LocationEntity>,
     onPick: (LocationEntity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (suggestions.isEmpty()) return
     val c = FindoutTheme.colors
-    val contentWidth = (LocalConfiguration.current.screenWidthDp - 44).dp
 
-    Popup(
-        alignment = Alignment.TopStart,
-        offset = IntOffset(0, 0),
-        properties = PopupProperties(focusable = false),
+    Column(
+        modifier
+            .fillMaxWidth()
+            .border(1.dp, c.line)
+            .background(c.card)
+            .heightIn(max = 360.dp)
+            .verticalScroll(rememberScrollState())
     ) {
-        Column(
-            modifier
-                .width(contentWidth)
-                .border(1.dp, c.line)
-                .background(c.card)
-                .heightIn(max = 320.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            suggestions.forEachIndexed { index, location ->
-                if (index > 0) Hairline()
-                SuggestionRow(location, onClick = { onPick(location) })
-            }
+        suggestions.forEachIndexed { index, location ->
+            if (index > 0) Hairline()
+            SuggestionRow(location, onClick = { onPick(location) })
         }
     }
 }
