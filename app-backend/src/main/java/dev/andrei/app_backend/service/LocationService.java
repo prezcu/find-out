@@ -8,8 +8,6 @@ import dev.andrei.app_backend.model.LocationAttribute;
 import dev.andrei.app_backend.model.UserAttributePreference;
 import dev.andrei.app_backend.repository.LocationRepository;
 import dev.andrei.app_backend.repository.UserAttributePreferenceRepository;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -131,9 +129,21 @@ public class LocationService {
             return List.of();
         }
 
-        PageRequest page = PageRequest.of(0, SEARCH_LIMIT, Sort.by("name").ascending());
-        return locationRepository.findByNormalizedNameContaining(normalized, page)
+        // Native ranking query returns ids in display order; hydrate the attribute graph in a
+        // second SELECT (native queries can't hydrate associations), then restore that order.
+        List<UUID> orderedIds = locationRepository.findFuzzyMatchIds(normalized, SEARCH_LIMIT);
+        if (orderedIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, Location> byId = locationRepository
+                .findAllWithAttributesByIdIn(orderedIds)
                 .stream()
+                .collect(Collectors.toMap(Location::getId, l -> l));
+
+        return orderedIds.stream()
+                .map(byId::get)
+                .filter(Objects::nonNull)
                 .map(LocationMapper::toDto)
                 .toList();
     }

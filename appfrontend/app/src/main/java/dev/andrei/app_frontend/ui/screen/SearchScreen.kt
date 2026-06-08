@@ -16,8 +16,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.ui.components.FindoutTextField
 import dev.andrei.app_frontend.ui.components.Kicker
+import dev.andrei.app_frontend.ui.components.SearchSuggestionDropdown
 import dev.andrei.app_frontend.ui.components.SectionRule
 import dev.andrei.app_frontend.ui.components.SpecimenCard
 import dev.andrei.app_frontend.ui.state.SearchUiState
@@ -39,7 +45,12 @@ fun SearchScreen(
 ) {
     val query by viewModel.query.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val c = FindoutTheme.colors
+    val focusManager = LocalFocusManager.current
+    var isFocused by remember { mutableStateOf(false) }
+
+    val showSuggestions = isFocused && query.isNotBlank() && suggestions.isNotEmpty()
 
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp)) {
@@ -52,27 +63,39 @@ fun SearchScreen(
                 value = query,
                 onValueChange = viewModel::onQueryChange,
                 imeAction = ImeAction.Search,
-                onImeAction = viewModel::submit,
+                onImeAction = {
+                    viewModel.dismissSuggestions()
+                    focusManager.clearFocus()
+                },
+                modifier = Modifier.onFocusChanged { isFocused = it.hasFocus },
                 trailing = if (query.isNotEmpty()) {
                     {
                         Text(
                             "×",
                             style = FindoutType.mono.copy(fontSize = 18.sp),
                             color = c.sub,
-                            modifier = Modifier.clickable {
-                                viewModel.onQueryChange("")
-                                viewModel.submit()
-                            }
+                            modifier = Modifier.clickable { viewModel.clearQuery() }
                         )
                     }
                 } else null
             )
+            // Anchored directly below the field; floats over the result cards while typing.
+            if (showSuggestions) {
+                SearchSuggestionDropdown(
+                    suggestions = suggestions,
+                    onPick = { location ->
+                        viewModel.dismissSuggestions()
+                        focusManager.clearFocus()
+                        onLocationClick(location.id.toString())
+                    }
+                )
+            }
             Spacer(Modifier.height(16.dp))
         }
 
         when (val state = uiState) {
             is SearchUiState.Idle ->
-                Hint("Type a name, type or area, then search.")
+                Hint("Start typing a name or type — results appear as you go.")
 
             is SearchUiState.Loading ->
                 Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {

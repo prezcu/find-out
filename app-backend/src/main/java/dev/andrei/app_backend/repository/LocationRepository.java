@@ -1,8 +1,6 @@
 package dev.andrei.app_backend.repository;
 
 import dev.andrei.app_backend.model.Location;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -77,12 +75,33 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
     List<Location> findAllWithAttributesByIdIn(@Param("ids") List<UUID> ids);
 
     /**
-     * Substring search on the persisted, pre-normalised name. Caller is
-     * expected to normalise {@code normalizedQuery} the same way the column
-     * was populated (see TextNormalizer). Sort + limit are passed via Pageable.
+     * Typo-tolerant ranked search over name + category. Returns matching ids in display order;
+     * the caller hydrates them via {@link #findAllWithAttributesByIdIn} (same two-step pattern as
+     * {@link #findTop10CloseLocationIds}, because native queries cannot hydrate JPA associations).
+     * <p>
+     * A row matches when the query is a substring of the name OR is trigram-similar (pg_trgm `%`,
+     * default threshold 0.3) to the name or category. Ordering: prefix matches first, then highest
+     * trigram similarity across name/category, then global rating. {@code normalizedQuery} must be
+     * normalised the same way the {@code normalized_name} column was populated (see TextNormalizer).
      */
-    @EntityGraph(attributePaths = {"locationAttributes", "locationAttributes.attribute"})
-    List<Location> findByNormalizedNameContaining(String normalizedQuery, Pageable pageable);
+    @Query(value = """
+        SELECT l.id
+        FROM location l
+        WHERE l.normalized_name LIKE '%' || :q || '%'
+           OR l.normalized_name % :q
+           OR lower(l.primary_category) % :q
+           OR lower(coalesce(l.primary_category_display_name, '')) % :q
+        ORDER BY
+           (l.normalized_name LIKE :q || '%') DESC,
+           GREATEST(
+               similarity(l.normalized_name, :q),
+               similarity(lower(l.primary_category), :q),
+               similarity(lower(coalesce(l.primary_category_display_name, '')), :q)
+           ) DESC,
+           l.average_score DESC NULLS LAST
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<UUID> findFuzzyMatchIds(@Param("q") String normalizedQuery, @Param("limit") int limit);
 
     // Single location with its attribute aggregates fetched, so a review submission can validate
     // attribute names and update the running averages in one managed graph. Mirrors

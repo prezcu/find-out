@@ -6,8 +6,6 @@ src/test
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-design-directions/
-TECHNOLOGIES.md
 
 ### STS ###
 .apt_generated
