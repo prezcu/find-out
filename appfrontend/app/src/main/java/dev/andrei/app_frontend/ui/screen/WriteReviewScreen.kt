@@ -1,9 +1,12 @@
 package dev.andrei.app_frontend.ui.screen
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -14,43 +17,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.andrei.app_frontend.ui.components.FindoutPrimaryButton
+import dev.andrei.app_frontend.ui.components.FindoutTextField
+import dev.andrei.app_frontend.ui.components.Kicker
 import dev.andrei.app_frontend.ui.state.AttributeRating
 import dev.andrei.app_frontend.ui.state.ReviewDraft
+import dev.andrei.app_frontend.ui.theme.FindoutTheme
+import dev.andrei.app_frontend.ui.theme.FindoutType
 import dev.andrei.app_frontend.ui.util.displayLabel
 import dev.andrei.app_frontend.ui.viewmodel.WriteReviewScrenViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WriteReviewScreen(
     onBack: () -> Unit,
@@ -58,192 +55,121 @@ fun WriteReviewScreen(
     viewModel: WriteReviewScrenViewModel = hiltViewModel()
 ) {
     val location by viewModel.location.collectAsStateWithLifecycle()
-    val reviewTextState = rememberTextFieldState()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val c = FindoutTheme.colors
 
-    // UI state for the rating of each attribute card, keyed by attribute name.
-    // Hoisted here (instead of inside AttributeCard) so it can be collected on submit.
+    var reviewText by remember { mutableStateOf("") }
     val attributeRatings = remember { mutableStateMapOf<String, Float>() }
 
-    // Navigate away exactly once, after composition settles, when the submit succeeds.
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) onSubmitSuccess()
-    }
+    LaunchedEffect(uiState.isSuccess) { if (uiState.isSuccess) onSubmitSuccess() }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Write a review") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+    Column(Modifier.fillMaxSize().background(c.bg)) {
+        // Top bar
+        Row(
+            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(Modifier.size(40.dp).clickable { onBack() }, contentAlignment = Alignment.CenterStart) {
+                Text("←", style = FindoutType.hero.copy(fontSize = 24.sp), color = c.ink)
+            }
+            Kicker(
+                "Write a Review",
+                color = c.sub,
+                fontSize = 10.sp,
+                letterSpacing = 1.5.sp,
+                modifier = Modifier.weight(1f).padding(end = 40.dp)
             )
         }
-    ) { paddingValues ->
 
-        Box(
-            modifier = Modifier
-                .padding(paddingValues)
+        LazyColumn(
+            Modifier.weight(1f),
+            contentPadding = PaddingValues(horizontal = 22.dp, vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            items(location?.attributes ?: emptyList(), key = { it.name }) { attribute ->
+                AttributeCard(
+                    name = displayLabel(attribute.displayName, attribute.name),
+                    rating = attributeRatings[attribute.name] ?: 0f,
+                    onRatingChange = { attributeRatings[attribute.name] = it }
+                )
+            }
+            item {
+                Spacer(Modifier.height(4.dp))
+                FindoutTextField(
+                    label = "Write your review",
+                    value = reviewText,
+                    onValueChange = { reviewText = it },
+                    singleLine = false
+                )
+            }
+        }
 
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(location?.attributes ?: emptyList()) { attribute ->
-                        // Display the friendly label, but key ratings by the stable name.
-                        AttributeCard(
-                            attributeName = displayLabel(attribute.displayName, attribute.name),
-                            rating = attributeRatings[attribute.name] ?: 0f,
-                            onRatingChange = { attributeRatings[attribute.name] = it }
-                        )
-                    }
-
-                    item {
-                        OutlinedTextField(
-                            state = reviewTextState,
-                            label = { Text("Write your review") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 15.dp),
-                            lineLimits = TextFieldLineLimits.MultiLine(
-                                minHeightInLines = 3,
-                                maxHeightInLines = 8
-                            )
-                        )
-                    }
-                }
-
-                Button(
-                    onClick = {
-                        val draft = ReviewDraft(
-                            attributeRatings = (location?.attributes ?: emptyList()).map { attribute ->
-                                AttributeRating(
-                                    attribute = attribute.name,
-                                    rating = attributeRatings[attribute.name] ?: 0f
-                                )
-                            },
-                            reviewText = reviewTextState.text.toString()
-                        )
-                        viewModel.submitReview(draft)
-                    },
-                    enabled = location != null && !uiState.isSubmitting,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                ) {
-                    if (uiState.isSubmitting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text("Submit review")
-                    }
-                }
-
-                if (uiState.errorMessage != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = uiState.errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+        Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 8.dp, bottom = 16.dp)) {
+            uiState.errorMessage?.let {
+                Text(it, style = FindoutType.mono.copy(fontSize = 10.5.sp), color = c.accent2)
+                Spacer(Modifier.height(8.dp))
+            }
+            FindoutPrimaryButton(
+                label = "Submit review",
+                onClick = {
+                    val draft = ReviewDraft(
+                        attributeRatings = (location?.attributes ?: emptyList()).map { attr ->
+                            AttributeRating(attr.name, attributeRatings[attr.name] ?: 0f)
+                        },
+                        reviewText = reviewText
                     )
-                }
-            }
+                    viewModel.submitReview(draft)
+                },
+                enabled = location != null && !uiState.isSubmitting,
+                loading = uiState.isSubmitting
+            )
         }
-
     }
-
 }
 
-
 @Composable
-fun AttributeCard(
-    attributeName: String,
-    rating: Float,
-    onRatingChange: (Float) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
+private fun AttributeCard(name: String, rating: Float, onRatingChange: (Float) -> Unit) {
+    val c = FindoutTheme.colors
+    Column(
+        Modifier.fillMaxWidth().border(1.dp, c.line).background(c.card).padding(horizontal = 15.dp, vertical = 13.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = attributeName, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                HalfStarRatingBar(
-                    rating = rating,
-                    onRatingChange = onRatingChange
-                )
-                Text(
-                    text = "%.1f".format(rating),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
+        Text(name, style = FindoutType.cardNameSm.copy(fontSize = 19.sp), color = c.ink)
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            HalfStarRatingBar(rating = rating, onRatingChange = onRatingChange)
+            Text("%.1f".format(rating), style = FindoutType.mono.copy(fontSize = 12.sp), color = c.sub)
         }
     }
 }
 
 @Composable
-private fun HalfStarRatingBar(
-    rating: Float,
-    onRatingChange: (Float) -> Unit,
-    starSize: Dp = 36.dp,
-) {
-    val filledColor = Color(0xFFFFC107)
-    val emptyColor = MaterialTheme.colorScheme.outlineVariant
+private fun HalfStarRatingBar(rating: Float, onRatingChange: (Float) -> Unit, starSize: Dp = 34.dp) {
+    val c = FindoutTheme.colors
     Row {
         for (i in 0 until 5) {
-            // how much of this star is filled
-            // 0f (empty), 0.5f (half), or 1f (full)
             val fill = (rating - i).coerceIn(0f, 1f)
-            Box(modifier = Modifier.size(starSize)) {
+            Box(Modifier.size(starSize)) {
                 Icon(
-                    imageVector = Icons.Filled.Star,
+                    Icons.Filled.Star,
                     contentDescription = null,
-                    tint = emptyColor,
+                    tint = c.faint,
                     modifier = Modifier.matchParentSize()
                 )
                 if (fill > 0f) {
                     Icon(
-                        imageVector = Icons.Filled.Star,
+                        Icons.Filled.Star,
                         contentDescription = null,
-                        tint = filledColor,
+                        tint = c.accent,
                         modifier = Modifier
                             .matchParentSize()
                             .drawWithContent {
-                                clipRect(right = size.width * fill) {
-                                    this@drawWithContent.drawContent()
-                                }
+                                clipRect(right = size.width * fill) { this@drawWithContent.drawContent() }
                             }
                     )
                 }
-                // 2 invisible tap zones on top
-                // left half -> +0.5, right half -> +1.
                 Row(Modifier.matchParentSize()) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clickable { onRatingChange(i + 0.5f) }
-                    )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clickable { onRatingChange(i + 1f) }
-                    )
+                    Box(Modifier.weight(1f).fillMaxHeight().clickable { onRatingChange(i + 0.5f) })
+                    Box(Modifier.weight(1f).fillMaxHeight().clickable { onRatingChange(i + 1f) })
                 }
             }
         }

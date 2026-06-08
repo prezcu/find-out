@@ -1,58 +1,63 @@
 package dev.andrei.app_frontend.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.unit.dp
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-)
-
+/**
+ * Field Edition theme — dark only (HANDOFF). Hard 90° corners everywhere, no elevation, palette
+ * driven by [FindoutColors]. Material's scheme is derived from the tokens purely so any
+ * un-restyled Material surface inherits the look. Access tokens via `FindoutTheme.colors`.
+ */
 @Composable
-fun AppfrontendTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+fun FindoutTheme(content: @Composable () -> Unit) {
+    val colors = FindoutColorsDark
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+    val scheme = darkColorScheme(
+        primary = colors.accent,
+        onPrimary = colors.onAccent,
+        secondary = colors.accent2,
+        onSecondary = colors.onAccent,
+        tertiary = colors.sage,
+        background = colors.bg,
+        onBackground = colors.ink,
+        surface = colors.card,
+        onSurface = colors.ink,
+        surfaceVariant = colors.cardHi,
+        onSurfaceVariant = colors.sub,
+        outline = colors.line,
+        outlineVariant = colors.hair,
+        error = colors.accent2,
+        onError = colors.onAccent,
     )
+
+    // Radius 0 everywhere (HANDOFF §4): hard-edged corners on all Material surfaces.
+    val square = RoundedCornerShape(0.dp)
+    val shapes = Shapes(
+        extraSmall = square,
+        small = square,
+        medium = square,
+        large = square,
+        extraLarge = square,
+    )
+
+    CompositionLocalProvider(LocalFindoutColors provides colors) {
+        MaterialTheme(
+            colorScheme = scheme,
+            typography = FindoutTypography,
+            shapes = shapes,
+            content = content
+        )
+    }
+}
+
+/** Ergonomic accessor: `FindoutTheme.colors.accent`. */
+object FindoutTheme {
+    val colors: FindoutColors
+        @Composable @ReadOnlyComposable get() = LocalFindoutColors.current
 }

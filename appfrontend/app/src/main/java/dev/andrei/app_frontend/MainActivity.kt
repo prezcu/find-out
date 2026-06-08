@@ -4,7 +4,9 @@ import dev.andrei.app_frontend.ui.navigation.AppNavHost
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.graphics.Color
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -12,7 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import dev.andrei.app_frontend.data.repository.SessionRepository
-import dev.andrei.app_frontend.ui.theme.AppfrontendTheme
+import dev.andrei.app_frontend.ui.theme.FindoutTheme
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 
@@ -34,7 +36,11 @@ class MainActivity: ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Dark Field Edition: transparent system bars with light (white) icons.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
+        )
 
         val alreadyGranted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
@@ -48,7 +54,7 @@ class MainActivity: ComponentActivity() {
         }
 
         setContent {
-            AppfrontendTheme {
+            FindoutTheme {
                 AppNavHost()
             }
         }

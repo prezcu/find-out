@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     // material3 1.4.0+ no longer pulls material-icons-core transitively; declare it explicitly
     implementation(libs.androidx.compose.material.icons.core)
+    // Downloadable Google Fonts (Newsreader / Hanken Grotesk / Spline Sans Mono) via the GMS provider
+    implementation(libs.androidx.compose.ui.text.google.fonts)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui)
     testImplementation(libs.junit)

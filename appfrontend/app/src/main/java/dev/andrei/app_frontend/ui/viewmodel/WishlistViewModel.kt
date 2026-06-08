@@ -48,4 +48,14 @@ class WishlistViewModel @Inject constructor(
             )
         }
     }
+
+    /** Removes a saved place; optimistically drops it from the list, reloading if the call fails. */
+    fun removeFromWishlist(locationId: String) {
+        viewModelScope.launch {
+            _uiState.update { state ->
+                state.copy(items = state.items.filterNot { it.id.toString() == locationId })
+            }
+            wishlistRepository.removeFromWishlist(locationId).onFailure { refresh() }
+        }
+    }
 }
