@@ -29,6 +29,9 @@ class LocationRepositoryImpl @Inject constructor(
     override suspend fun getRecommendedLocations(deviceLongitude: Double, deviceLatitude: Double): Result<List<LocationEntity>> =
         fetchLocations { api.fetchRecommendedLocations(JustCoordinatesDto(deviceLatitude, deviceLongitude)) }
 
+    override suspend fun getDiscoveryLocations(deviceLongitude: Double, deviceLatitude: Double): Result<List<LocationEntity>> =
+        fetchLocations { api.fetchDiscoveryLocations(JustCoordinatesDto(deviceLatitude, deviceLongitude)) }
+
     // Shared shape for the landing lists: call the endpoint, keep the server order, and upsert into
     // Room (without clearing) so the detail screen can resolve any card by id. The two lists coexist
     // for a signed-in user, so clearing here would wipe the other list's rows. Mirrors searchLocationsByName.

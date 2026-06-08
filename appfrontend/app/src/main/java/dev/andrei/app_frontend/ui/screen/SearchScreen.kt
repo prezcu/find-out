@@ -61,7 +61,7 @@ fun SearchScreen(
             SectionRule()
             Spacer(Modifier.height(14.dp))
             FindoutTextField(
-                label = "Search by name, type or area",
+                label = "Search by name or category",
                 value = query,
                 onValueChange = viewModel::onQueryChange,
                 imeAction = ImeAction.Search,
@@ -109,7 +109,7 @@ fun SearchScreen(
         } else {
             when (val state = uiState) {
                 is SearchUiState.Idle ->
-                    Hint("Start typing a name or type — results appear as you go.")
+                    Hint("Start typing a name or category.")
 
                 is SearchUiState.Loading ->
                     Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
@@ -132,7 +132,7 @@ fun SearchScreen(
                         modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp)
                     )
                     if (state.results.isEmpty()) {
-                        Hint("Nothing matches “$query”. Try a café name or a neighbourhood.")
+                        Hint("Nothing matches “$query”. Try a cafe name or a general category like museum.")
                     } else {
                         LazyColumn(
                             contentPadding = PaddingValues(start = 22.dp, end = 22.dp, bottom = 6.dp),

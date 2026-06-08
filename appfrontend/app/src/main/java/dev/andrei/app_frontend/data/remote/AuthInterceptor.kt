@@ -21,7 +21,8 @@ class AuthInterceptor @Inject constructor(
         val needsAuth = path.startsWith("/api/reviews") ||
                 path.startsWith("/api/wishlist") ||
                 path.startsWith("/api/preferences") ||
-                path == "/api/locations/recommended"
+                path == "/api/locations/recommended" ||
+                path == "/api/locations/discover"
         if (!needsAuth) {
             return chain.proceed(original)
         }

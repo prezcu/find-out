@@ -69,9 +69,17 @@ class LandingScreenViewModel @Inject constructor(
 
                 // Fetch concurrently. Anonymous users only get the public top-rated list.
                 val topRatedDeferred = async { locationRepository.getTopRatedLocations(lng, lat) }
+                val loggedIn = authRepository.isLoggedIn()
                 val bestMatchesDeferred = async {
-                    if (authRepository.isLoggedIn()) {
+                    if (loggedIn) {
                         locationRepository.getRecommendedLocations(lng, lat)
+                    } else {
+                        Result.success(emptyList())
+                    }
+                }
+                val discoveryDeferred = async {
+                    if (loggedIn) {
+                        locationRepository.getDiscoveryLocations(lng, lat)
                     } else {
                         Result.success(emptyList())
                     }
@@ -79,9 +87,15 @@ class LandingScreenViewModel @Inject constructor(
 
                 val topRated = topRatedDeferred.await().getOrThrow()
                 val bestMatches = bestMatchesDeferred.await().getOrThrow()
+                // The backend already returns empty when the user has no effective preferences.
+                val discoveryPicks = discoveryDeferred.await().getOrThrow()
 
                 _uiState.value = LocationUiState.Success(
-                    LandingData(bestMatches = collapseIfUnranked(bestMatches), topRated = topRated)
+                    LandingData(
+                        bestMatches = collapseIfUnranked(bestMatches),
+                        topRated = topRated,
+                        discoveryPicks = discoveryPicks,
+                    )
                 )
             } catch (e: Exception) {
                 Log.e("LandingScreenViewModel", "Error loading landing locations: ${e.message}", e)

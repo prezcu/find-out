@@ -43,7 +43,7 @@ fun WishlistScreen(
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(
-            title = "Your shortlist",
+            title = "Your saved locations",
             kicker = "Saved · ${state.items.size}",
             modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp, bottom = 14.dp)
         )

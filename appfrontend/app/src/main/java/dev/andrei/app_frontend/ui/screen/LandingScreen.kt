@@ -90,6 +90,8 @@ private fun LandingContent(
     // Hoisted out of the LazyColumn builder: rememberSaveable is @Composable and the builder is not.
     var bestVisible by rememberSaveable { mutableIntStateOf(INITIAL_VISIBLE) }
     var topVisible by rememberSaveable { mutableIntStateOf(INITIAL_VISIBLE) }
+    // Which discovery pick is currently shown; "Try again" advances it (wraps via modulo).
+    var luckyIndex by rememberSaveable { mutableIntStateOf(0) }
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -111,11 +113,19 @@ private fun LandingContent(
             } else {
                 if (hasBestMatches) {
                     locationSection(
-                        title = "Best matches",
+                        title = "Recommended for you",
                         countLabel = "Bucharest · ${data.bestMatches.size}",
                         locations = data.bestMatches,
                         visibleCount = bestVisible,
                         onViewMore = { bestVisible += PAGE_STEP },
+                        onLocationClick = onLocationClick
+                    )
+                }
+                if (data.discoveryPicks.isNotEmpty()) {
+                    discoverySection(
+                        picks = data.discoveryPicks,
+                        index = luckyIndex,
+                        onTryAgain = { luckyIndex++ },
                         onLocationClick = onLocationClick
                     )
                 }
@@ -157,6 +167,36 @@ private fun LazyListScope.locationSection(
     if (visibleCount < locations.size) {
         item(key = "more:$title") {
             FindoutOutlineButton(label = "View more", onClick = onViewMore)
+        }
+    }
+}
+
+// The re-rollable "Try something new" pick: one card from the discovery batch plus a "Try again"
+// button that cycles to the next candidate. matchScore is null on these rows, so the card shows no
+// match notch — the point is serendipity, not a score.
+private fun LazyListScope.discoverySection(
+    picks: List<LocationEntity>,
+    index: Int,
+    onTryAgain: () -> Unit,
+    onLocationClick: (String) -> Unit,
+) {
+    item(key = "header:discovery") {
+        ScreenHeader(
+            title = "Try something new",
+            kicker = "Feeling lucky",
+            modifier = Modifier.padding(top = 4.dp, bottom = 14.dp)
+        )
+    }
+    val pick = picks[index.mod(picks.size)]
+    item(key = "card:discovery") {
+        SpecimenCard(
+            location = pick,
+            onOpen = { onLocationClick(pick.id.toString()) }
+        )
+    }
+    if (picks.size > 1) {
+        item(key = "more:discovery") {
+            FindoutOutlineButton(label = "Try again", onClick = onTryAgain)
         }
     }
 }

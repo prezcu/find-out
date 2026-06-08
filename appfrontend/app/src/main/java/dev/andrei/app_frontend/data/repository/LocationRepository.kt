@@ -14,6 +14,10 @@ interface LocationRepository {
     // Single-shot Result for the same reason as getTopRatedLocations.
     suspend fun getRecommendedLocations(deviceLongitude: Double, deviceLatitude: Double): Result<List<LocationEntity>>
 
+    // "Try something new": nearby high-quality places that lean on concepts the user usually doesn't
+    // prioritize, in server (discovery-ranked) order. Empty when the user has no effective preferences.
+    suspend fun getDiscoveryLocations(deviceLongitude: Double, deviceLatitude: Double): Result<List<LocationEntity>>
+
     fun getLocationById(id: UUID): Flow<LocationEntity?>
 
     suspend fun searchLocationsByName(query: String): Result<List<LocationEntity>>

@@ -6,10 +6,15 @@ import dev.andrei.app_frontend.data.local.entity.LocationEntity
  * Landing feed. [LandingData.bestMatches] is empty for anonymous users and for signed-in users with no
  * effective preferences (where the recommended list would just mirror [LandingData.topRated]); in those
  * cases only the "Top rated nearby" section is shown.
+ *
+ * [LandingData.discoveryPicks] backs the re-rollable "Try something new" section; it is empty for
+ * anonymous users and for signed-in users with no effective preferences (in which case the section is
+ * hidden).
  */
 data class LandingData(
     val bestMatches: List<LocationEntity>,
     val topRated: List<LocationEntity>,
+    val discoveryPicks: List<LocationEntity> = emptyList(),
 )
 
 sealed interface LocationUiState {

@@ -41,6 +41,11 @@ interface ApiService {
         @Body request: JustCoordinatesDto
     ): Response<List<LocationDto>>
 
+    @POST("/api/locations/discover")
+    suspend fun fetchDiscoveryLocations(
+        @Body request: JustCoordinatesDto
+    ): Response<List<LocationDto>>
+
     @GET("/api/preferences")
     suspend fun getPreferences(): Response<List<AttributeConceptDto>>
 
