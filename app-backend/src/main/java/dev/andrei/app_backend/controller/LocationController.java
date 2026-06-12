@@ -72,10 +72,11 @@ public class LocationController {
 
     @PostMapping("/nearby")
     public ResponseEntity<List<LocationDto>> fetchTop10CloseLocations(
-            @RequestBody JustCoordinatesDto request
+            @RequestBody JustCoordinatesDto request,
+            @RequestParam(name = "limit", defaultValue = "30") int limit
             ) {
 
-        List<LocationDto> results = locationService.getTop10CloseLocations(request);
+        List<LocationDto> results = locationService.getTop10CloseLocations(request, limit);
 
         return ResponseEntity.ok(results);
     }
@@ -84,8 +85,20 @@ public class LocationController {
     @PostMapping("/recommended")
     public ResponseEntity<List<LocationDto>> recommended(
             @AuthenticationPrincipal User user,
-            @RequestBody JustCoordinatesDto request) {
-        return ResponseEntity.ok(locationService.getRecommendedLocations(user.getId(), request));
+            @RequestBody JustCoordinatesDto request,
+            @RequestParam(name = "limit", defaultValue = "30") int limit) {
+        return ResponseEntity.ok(locationService.getRecommendedLocations(user.getId(), request, limit));
+    }
+
+    // Authenticated: nearby high-quality places that lean on concepts the user usually doesn't
+    // prioritize -- "try something new", the inverse of /recommended. Returns a batch the client
+    // rerolls through. Empty when the user has no effective preferences.
+    @PostMapping("/discover")
+    public ResponseEntity<List<LocationDto>> discover(
+            @AuthenticationPrincipal User user,
+            @RequestBody JustCoordinatesDto request,
+            @RequestParam(name = "limit", defaultValue = "12") int limit) {
+        return ResponseEntity.ok(locationService.getDiscoveryLocations(user.getId(), request, limit));
     }
 
     @GetMapping("/search")

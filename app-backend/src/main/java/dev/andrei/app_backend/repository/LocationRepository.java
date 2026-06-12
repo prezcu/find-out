@@ -25,11 +25,12 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
             1500
         )
         ORDER BY l.average_score DESC
-        LIMIT 10
+        LIMIT :limit
         """, nativeQuery = true)
     List<UUID> findTop10CloseLocationIds(
             @Param("latitude") double latitude,
-            @Param("longitude") double longitude
+            @Param("longitude") double longitude,
+            @Param("limit") int limit
     );
 
     // Match scoring: all candidate ids within a variable radius (meters). No average_score
@@ -64,12 +65,15 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
     // Step 2: hydrate locations + their attribute graph in one SELECT.
     // LEFT JOIN so locations without attributes still come back. DISTINCT
     // collapses the row multiplication caused by the one-to-many fetch.
+    // Each attribute's concept is fetched too so the mapper can expose its slug
+    // (used client-side to join the user's per-concept weight) without an N+1.
     // Result order is undefined -- the service reorders to match step 1.
     @Query("""
         SELECT DISTINCT l
         FROM Location l
         LEFT JOIN FETCH l.locationAttributes la
-        LEFT JOIN FETCH la.attribute
+        LEFT JOIN FETCH la.attribute a
+        LEFT JOIN FETCH a.concept
         WHERE l.id IN :ids
         """)
     List<Location> findAllWithAttributesByIdIn(@Param("ids") List<UUID> ids);

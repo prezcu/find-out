@@ -17,8 +17,13 @@ public final class LocationMapper {
 
     public static LocationDto toDto(Location location, Double matchScore) {
         List<AttributeDto> attributes = location.getLocationAttributes().stream()
-                .map(la -> new AttributeDto(
-                        la.getAttribute().getName()))
+                .map(la -> {
+                    var concept = la.getAttribute().getConcept();
+                    return new AttributeDto(
+                            la.getAttribute().getName(),
+                            concept != null ? concept.getSlug() : null,
+                            la.getAverage_score());
+                })
                 .toList();
 
         return new LocationDto(
