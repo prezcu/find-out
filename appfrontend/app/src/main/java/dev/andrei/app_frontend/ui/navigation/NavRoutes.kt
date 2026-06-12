@@ -53,4 +53,7 @@ data object SavedRoute : TopLevelRoute {
 // Edit-preferences sub-screen, reached from Profile (not a bottom-nav destination).
 @Serializable object PreferencesRoute
 
+// First-run onboarding wizard, shown once right after registration (not a bottom-nav destination).
+@Serializable object OnboardingRoute
+
 val topLevelRoutes = listOf(LandingRoute, SearchRoute, SavedRoute, ProfileRoute)

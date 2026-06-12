@@ -6,42 +6,30 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.andrei.app_frontend.data.remote.dto.preference.AttributeConceptDto
 import dev.andrei.app_frontend.data.remote.dto.preference.PreferenceUpdateDto
 import dev.andrei.app_frontend.data.repository.PreferenceRepository
+import dev.andrei.app_frontend.ui.util.ONBOARDING_SLUGS
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** One collapsible category on the Preferences screen, grouped by the concept's `groupLabel`. */
-data class CategorySection(
-    val label: String,
-    val concepts: List<AttributeConceptDto>,
-    val setCount: Int,
-    val total: Int,
-)
-
+/**
+ * Drives the post-registration onboarding wizard. Loads the full concept catalogue, keeps only the
+ * curated [ONBOARDING_SLUGS] (in that order), and persists them with a single partial update — the
+ * backend upserts just the concepts we send and leaves the rest at their default.
+ */
 @HiltViewModel
-class PreferencesViewModel @Inject constructor(
+class OnboardingViewModel @Inject constructor(
     private val preferenceRepository: PreferenceRepository
 ) : ViewModel() {
 
     private val _concepts = MutableStateFlow<List<AttributeConceptDto>>(emptyList())
     val concepts = _concepts.asStateFlow()
 
-    /**
-     * The 23 concepts grouped into collapsible categories by `groupLabel` (seeded in the DB).
-     * Sections are ordered by the lowest `sortOrder` they contain; concepts without a label fall
-     * into a trailing "More" bucket (defensive — every concept should be labelled).
-     */
-    val sections: StateFlow<List<CategorySection>> = _concepts
-        .map(::groupIntoSections)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
     private val _loading = MutableStateFlow(false)
     val loading = _loading.asStateFlow()
+
+    private val _step = MutableStateFlow(0)
+    val step = _step.asStateFlow()
 
     private val _saving = MutableStateFlow(false)
     val saving = _saving.asStateFlow()
@@ -61,20 +49,27 @@ class PreferencesViewModel @Inject constructor(
             _loading.value = true
             _error.value = null
             preferenceRepository.getPreferences()
-                .onSuccess { _concepts.value = it }
+                .onSuccess { all ->
+                    val bySlug = all.associateBy { it.slug }
+                    _concepts.value = ONBOARDING_SLUGS.mapNotNull { bySlug[it] }
+                }
                 .onFailure { _error.value = it.message }
             _loading.value = false
         }
     }
 
-    /** Local-only edit; persisted on save(). */
+    /** Advance / retreat through the curated attributes; [last] is the final (confirmation) index. */
+    fun next(last: Int) { _step.value = (_step.value + 1).coerceAtMost(last) }
+    fun back() { _step.value = (_step.value - 1).coerceAtLeast(0) }
+
+    /** Local-only edit; persisted on [finish]. */
     fun setImportance(conceptId: String, importance: Int) {
         _concepts.value = _concepts.value.map {
             if (it.conceptId == conceptId) it.copy(importance = importance) else it
         }
     }
 
-    fun save() {
+    fun finish() {
         viewModelScope.launch {
             _saving.value = true
             _error.value = null
@@ -86,20 +81,3 @@ class PreferencesViewModel @Inject constructor(
         }
     }
 }
-
-private const val MORE_LABEL = "More"
-
-private fun groupIntoSections(concepts: List<AttributeConceptDto>): List<CategorySection> =
-    concepts
-        .groupBy { it.groupLabel?.takeIf(String::isNotBlank) ?: MORE_LABEL }
-        .map { (label, items) ->
-            val sorted = items.sortedBy { it.sortOrder }
-            CategorySection(
-                label = label,
-                concepts = sorted,
-                setCount = sorted.count { it.importance > 0 },
-                total = sorted.size,
-            )
-        }
-        // Order sections by the lowest sortOrder they contain; keep the "More" bucket last.
-        .sortedWith(compareBy({ it.label == MORE_LABEL }, { it.concepts.minOf(AttributeConceptDto::sortOrder) }))

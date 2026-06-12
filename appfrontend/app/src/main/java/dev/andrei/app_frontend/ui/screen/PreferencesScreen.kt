@@ -1,7 +1,7 @@
 package dev.andrei.app_frontend.ui.screen
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,21 +21,28 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.andrei.app_frontend.data.remote.dto.preference.AttributeConceptDto
 import dev.andrei.app_frontend.ui.components.Hairline
+import dev.andrei.app_frontend.ui.components.ImportanceBar
+import dev.andrei.app_frontend.ui.components.ImportanceSteppers
 import dev.andrei.app_frontend.ui.components.Kicker
 import dev.andrei.app_frontend.ui.components.SectionRule
 import dev.andrei.app_frontend.ui.theme.FindoutTheme
 import dev.andrei.app_frontend.ui.theme.FindoutType
 import dev.andrei.app_frontend.ui.util.displayLabel
+import dev.andrei.app_frontend.ui.viewmodel.CategorySection
 import dev.andrei.app_frontend.ui.viewmodel.PreferencesViewModel
 
 @Composable
@@ -44,6 +51,7 @@ fun PreferencesScreen(
     viewModel: PreferencesViewModel = hiltViewModel()
 ) {
     val concepts by viewModel.concepts.collectAsStateWithLifecycle()
+    val sections by viewModel.sections.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val saving by viewModel.saving.collectAsStateWithLifecycle()
     val saved by viewModel.saved.collectAsStateWithLifecycle()
@@ -51,6 +59,17 @@ fun PreferencesScreen(
     val c = FindoutTheme.colors
 
     LaunchedEffect(saved) { if (saved) onBack() }
+
+    // Which category sections are open. First section opens once data lands, as a hint that the
+    // rows are tucked under the headers; after that the user is in control.
+    val expanded = remember { mutableStateListOf<String>() }
+    var didInit by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(sections) {
+        if (!didInit && sections.isNotEmpty()) {
+            expanded.add(sections.first().label)
+            didInit = true
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         // Header (edit mode: back arrow + kicker)
@@ -91,11 +110,25 @@ fun PreferencesScreen(
                 Modifier.weight(1f),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 22.dp)
             ) {
-                items(concepts, key = { it.conceptId }) { concept ->
-                    ConceptPreferenceRow(
-                        concept = concept,
-                        onImportanceChange = { viewModel.setImportance(concept.conceptId, it) }
-                    )
+                sections.forEach { section ->
+                    val isOpen = section.label in expanded
+                    item(key = "header:${section.label}") {
+                        CategoryHeader(
+                            section = section,
+                            expanded = isOpen,
+                            onToggle = {
+                                if (isOpen) expanded.remove(section.label) else expanded.add(section.label)
+                            }
+                        )
+                    }
+                    if (isOpen) {
+                        items(section.concepts, key = { it.conceptId }) { concept ->
+                            ConceptPreferenceRow(
+                                concept = concept,
+                                onImportanceChange = { viewModel.setImportance(concept.conceptId, it) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -136,13 +169,49 @@ fun PreferencesScreen(
     }
 }
 
+/** Collapsible category header: name + how many in the group are set + a rotating chevron. */
+@Composable
+private fun CategoryHeader(
+    section: CategorySection,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    val c = FindoutTheme.colors
+    val chevronRotation by animateFloatAsState(if (expanded) 90f else 0f, label = "chevron")
+    Column {
+        Row(
+            Modifier.fillMaxWidth().clickable { onToggle() }.padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                section.label,
+                style = FindoutType.cardNameSm.copy(fontSize = 19.sp),
+                color = c.ink,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                "${section.setCount}/${section.total} set",
+                style = FindoutType.mono.copy(fontSize = 11.sp),
+                color = if (section.setCount > 0) c.accent else c.sub
+            )
+            Text(
+                "›",
+                style = FindoutType.hero.copy(fontSize = 22.sp),
+                color = c.sub,
+                modifier = Modifier.rotate(chevronRotation)
+            )
+        }
+        Hairline()
+    }
+}
+
 @Composable
 private fun ConceptPreferenceRow(
     concept: AttributeConceptDto,
     onImportanceChange: (Int) -> Unit
 ) {
     val c = FindoutTheme.colors
-    val w = concept.importance
     Column(Modifier.fillMaxWidth().padding(vertical = 13.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
@@ -151,52 +220,11 @@ private fun ConceptPreferenceRow(
                 color = c.ink,
                 modifier = Modifier.weight(1f)
             )
-            Stepper(glyph = "–", borderColor = c.line, glyphColor = if (w > 0) c.ink else c.faint) {
-                onImportanceChange((w - 1).coerceAtLeast(0))
-            }
-            Text(
-                w.toString(),
-                style = FindoutType.cardName.copy(fontSize = 26.sp, fontFeatureSettings = "tnum"),
-                color = c.accent,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.width(24.dp)
-            )
-            Stepper(glyph = "+", borderColor = c.accent, glyphColor = c.accent) {
-                onImportanceChange((w + 1).coerceAtMost(5))
-            }
+            ImportanceSteppers(value = concept.importance, onValueChange = onImportanceChange)
         }
         Spacer(Modifier.height(10.dp))
-        // tappable 5-segment 0..5 bar
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            for (j in 0 until 5) {
-                val on = j < w
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(9.dp)
-                        .background(if (on) c.accent else Color.Transparent)
-                        .border(1.dp, if (on) c.accent else c.line)
-                        .clickable { onImportanceChange(if (j + 1 == w) j else j + 1) }
-                )
-            }
-        }
+        ImportanceBar(value = concept.importance, onValueChange = onImportanceChange)
         Spacer(Modifier.height(13.dp))
         Hairline()
-    }
-}
-
-@Composable
-private fun Stepper(glyph: String, borderColor: Color, glyphColor: Color, onClick: () -> Unit) {
-    // 48dp touch target around a compact 26dp visual square (HANDOFF §4).
-    Box(
-        Modifier.size(48.dp).clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            Modifier.size(26.dp).border(1.dp, borderColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(glyph, style = FindoutType.mono.copy(fontSize = 16.sp), color = glyphColor)
-        }
     }
 }

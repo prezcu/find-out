@@ -16,6 +16,7 @@ import androidx.navigation.toRoute
 import dev.andrei.app_frontend.ui.screen.AttractionScreen
 import dev.andrei.app_frontend.ui.screen.LandingScreen
 import dev.andrei.app_frontend.ui.screen.LoginScreen
+import dev.andrei.app_frontend.ui.screen.OnboardingScreen
 import dev.andrei.app_frontend.ui.screen.PreferencesScreen
 import dev.andrei.app_frontend.ui.screen.ProfileScreen
 import dev.andrei.app_frontend.ui.screen.RegisterScreen
@@ -62,10 +63,28 @@ fun AppNavHost(authViewModel: AppAuthViewModel = hiltViewModel()) {
             composable<RegisterRoute> {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        // Drop both Register and Login, returning to the pre-auth screen.
-                        navController.popBackStack(LoginRoute, inclusive = true)
+                        // Brand-new account → curated onboarding. Drop Register+Login from the back
+                        // stack so the wizard sits directly over the pre-auth screen.
+                        navController.navigate(OnboardingRoute) {
+                            popUpTo(LoginRoute) { inclusive = true }
+                        }
                     },
                     onNavigateToLogin = { navController.popBackStack() }
+                )
+            }
+
+            composable<OnboardingRoute> {
+                OnboardingScreen(
+                    onFinishToPreferences = {
+                        navController.navigate(PreferencesRoute) {
+                            popUpTo(OnboardingRoute) { inclusive = true }
+                        }
+                    },
+                    onFinishToLanding = {
+                        navController.navigate(LandingRoute) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
                 )
             }
 
