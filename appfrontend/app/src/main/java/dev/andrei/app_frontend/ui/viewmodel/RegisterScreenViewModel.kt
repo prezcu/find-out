@@ -17,6 +17,8 @@ class RegisterScreenViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
+    private val emailRegex = """^[^\s@]+@[^\s@]+\.[^\s@]+$""".toRegex()
+
     private val _formState = MutableStateFlow(RegisterFormState())
     val formState = _formState.asStateFlow()
 
@@ -56,8 +58,7 @@ class RegisterScreenViewModel @Inject constructor(
 
     private fun validate(state: RegisterFormState): String? {
         if (state.email.isBlank()) return "Email is required"
-        //TODO: Additional email validation
-        if (!state.email.contains("@")) return "Enter a valid email"
+        if (!emailRegex.matches(state.email)) return "Enter a valid email address"
         if (state.username.isBlank()) return "Username is required"
         if (state.username.length > 50) return "Username must be at most 50 characters"
         if (state.password.length < 8) return "Password must be at least 8 characters"

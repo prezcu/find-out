@@ -31,8 +31,6 @@ import dev.andrei.app_frontend.ui.theme.FindoutTheme
 import dev.andrei.app_frontend.ui.theme.FindoutType
 import dev.andrei.app_frontend.ui.viewmodel.RegisterScreenViewModel
 
-private val EMAIL_RE = Regex("\\S+@\\S+\\.\\S+")
-
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
@@ -45,11 +43,7 @@ fun RegisterScreen(
     LaunchedEffect(state.isSuccess) { if (state.isSuccess) onRegisterSuccess() }
 
     val pwOk = state.password.length >= 8
-    val mismatch = state.confirmPassword.isNotEmpty() && state.password != state.confirmPassword
-    val valid = EMAIL_RE.matches(state.email) &&
-        state.username.length >= 2 &&
-        pwOk &&
-        state.password == state.confirmPassword
+    val valid = state.username.length >= 2 && pwOk && state.confirmPassword.isNotEmpty()
 
     Column(
         Modifier
@@ -102,7 +96,7 @@ fun RegisterScreen(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    if (pwOk) "✓ at least 8 characters" else "at least 8 characters",
+                    if (pwOk) "✓ at least 8 characters" else "Password has to be at least 8 characters",
                     style = FindoutType.mono.copy(fontSize = 10.sp),
                     color = if (pwOk) c.sage else c.faint,
                     modifier = Modifier.padding(start = 2.dp)
@@ -116,19 +110,23 @@ fun RegisterScreen(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
                 onImeAction = { if (valid) viewModel.submit() },
-                visualTransformation = passwordTransform(state.isPasswordVisible)
+                visualTransformation = passwordTransform(false)
             )
-            if (mismatch) {
-                Text("passwords don't match", style = FindoutType.mono.copy(fontSize = 10.5.sp), color = c.accent2, modifier = Modifier.padding(start = 2.dp))
-            }
             state.errorMessage?.let {
-                Text(it, style = FindoutType.mono.copy(fontSize = 10.5.sp), color = c.accent2, modifier = Modifier.padding(start = 2.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    Text(
+                        it,
+                        style = FindoutType.mono.copy(fontSize = 14.5.sp),
+                        color = c.accent2,
+                        modifier = Modifier.padding(start = 2.dp)
+                    )
+                }
             }
         }
 
         Spacer(Modifier.height(22.dp))
         FindoutPrimaryButton(
-            label = "Create account →",
+            label = "Create account",
             onClick = viewModel::submit,
             enabled = valid,
             loading = state.isLoading
