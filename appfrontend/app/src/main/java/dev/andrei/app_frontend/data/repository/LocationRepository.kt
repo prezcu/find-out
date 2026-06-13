@@ -1,6 +1,7 @@
 package dev.andrei.app_frontend.data.repository
 
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
+import dev.andrei.app_frontend.data.remote.dto.LocationDetailsDto
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
@@ -27,4 +28,11 @@ interface LocationRepository {
      * photos (or the backend has no Google key configured). Never throws.
      */
     suspend fun getPhotoUrls(locationId: String): List<String>
+
+    /**
+     * The venue's street address + weekly opening hours, fetched on attraction view (the backend
+     * resolves them from Google once, then serves the cache). Null when unavailable or on failure;
+     * never throws.
+     */
+    suspend fun getDetails(locationId: String): LocationDetailsDto?
 }

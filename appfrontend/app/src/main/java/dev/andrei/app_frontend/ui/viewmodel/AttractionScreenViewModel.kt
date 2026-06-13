@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.andrei.app_frontend.data.local.entity.LocationEntity
 import dev.andrei.app_frontend.data.remote.dto.AttributeDto
+import dev.andrei.app_frontend.data.remote.dto.LocationDetailsDto
 import dev.andrei.app_frontend.data.remote.dto.ReviewDto
 import dev.andrei.app_frontend.data.repository.LocationRepository
 import kotlinx.coroutines.flow.SharingStarted
@@ -59,6 +60,11 @@ class AttractionScreenViewModel @Inject constructor(
     private val _photoUrls = MutableStateFlow<List<String>>(emptyList())
     val photoUrls = _photoUrls.asStateFlow()
 
+    // Street address + weekly opening hours, resolved on open (backend caches the Google call).
+    // Null until loaded / when unavailable; the screen hides the address and hours sections then.
+    private val _details = MutableStateFlow<LocationDetailsDto?>(null)
+    val details = _details.asStateFlow()
+
     // The signed-in user's taste weights (importance per concept); empty when logged out / unset.
     private val _concepts = MutableStateFlow<List<AttributeConceptDto>>(emptyList())
 
@@ -84,9 +90,10 @@ class AttractionScreenViewModel @Inject constructor(
     )
 
     init {
-        // A location's reviews and photos are public, so they can load regardless of auth.
+        // A location's reviews, photos and details are public, so they can load regardless of auth.
         loadReviews()
         loadPhotos()
+        loadDetails()
         loadPreferences()
     }
 
@@ -135,6 +142,13 @@ class AttractionScreenViewModel @Inject constructor(
     private fun loadPhotos() {
         viewModelScope.launch {
             _photoUrls.value = locationRepository.getPhotoUrls(locationIdArg)
+        }
+    }
+
+    /** Best-effort: address + opening hours. Stays null on failure (screen hides those sections). */
+    private fun loadDetails() {
+        viewModelScope.launch {
+            _details.value = locationRepository.getDetails(locationIdArg)
         }
     }
 

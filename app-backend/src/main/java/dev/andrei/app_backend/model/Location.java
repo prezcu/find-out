@@ -72,6 +72,11 @@ public class Location {
     @Column(name = "website_url")
     private String website_url;
 
+    // Street address resolved from Google Place Details (lazily, then persisted; see
+    // GooglePlacesDetailsService). Null until first attraction view / when unavailable.
+    @Column(name = "address")
+    private String address;
+
     // --- Google Place Photos (resolved lazily, then persisted; see GooglePlacesPhotoService) ---
 
     @Column(name = "google_place_id")
@@ -86,6 +91,19 @@ public class Location {
     // Set on a successful resolve AND when the search returns nothing -> negative cache.
     @Column(name = "photos_fetched_at")
     private Instant photosFetchedAt;
+
+    // --- Google Place Details: address + opening hours (resolved lazily; see GooglePlacesDetailsService) ---
+
+    // Weekly opening intervals, ordered by ISO day. Owned by this location (cascade + orphan removal):
+    // resolving details replaces the set, deleting the location deletes its hours rows.
+    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("dayOfWeek ASC")
+    private List<LocationHours> hours = new ArrayList<>();
+
+    // Set on a successful resolve AND when details came back empty -> negative cache (free-plan safe:
+    // the Enterprise opening-hours field is fetched at most once per location, never refreshed).
+    @Column(name = "details_fetched_at")
+    private Instant detailsFetchedAt;
 
     @OneToMany(mappedBy = "location")
     private Set<LocationAttribute> locationAttributes;

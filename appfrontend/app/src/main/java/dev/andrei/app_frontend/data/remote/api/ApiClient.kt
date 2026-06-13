@@ -2,6 +2,7 @@ package dev.andrei.app_frontend.data.remote.api
 
 import dev.andrei.app_frontend.data.remote.dto.AddWishlistRequestDto
 import dev.andrei.app_frontend.data.remote.dto.JustCoordinatesDto
+import dev.andrei.app_frontend.data.remote.dto.LocationDetailsDto
 import dev.andrei.app_frontend.data.remote.dto.LocationDto
 import dev.andrei.app_frontend.data.remote.dto.LocationPhotosDto
 import dev.andrei.app_frontend.data.remote.dto.MyReviewDto
@@ -64,6 +65,13 @@ interface ApiService {
     suspend fun getLocationPhotoCount(
         @Path("id") id: String
     ): Response<LocationPhotosDto>
+
+    // Public: street address + weekly opening hours. Resolved from Google Place Details on first hit
+    // (server-cached), so re-opens make no Google call. Open-now is derived on the client.
+    @GET("/api/locations/{id}/details")
+    suspend fun getLocationDetails(
+        @Path("id") id: String
+    ): Response<LocationDetailsDto>
 
     @POST("/auth/register")
     suspend fun register(

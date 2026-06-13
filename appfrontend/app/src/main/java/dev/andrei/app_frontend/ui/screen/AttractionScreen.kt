@@ -51,9 +51,14 @@ import dev.andrei.app_frontend.ui.components.catalogCode
 import dev.andrei.app_frontend.ui.theme.FindoutTheme
 import dev.andrei.app_frontend.ui.theme.FindoutType
 import dev.andrei.app_frontend.ui.util.displayLabel
+import dev.andrei.app_frontend.ui.util.openStatus
+import dev.andrei.app_frontend.ui.util.toBadge
+import dev.andrei.app_frontend.ui.util.weeklySchedule
 import dev.andrei.app_frontend.ui.viewmodel.AttractionScreenViewModel
 import kotlin.math.roundToInt
 import androidx.core.net.toUri
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 @Composable
 fun AttractionScreen(
@@ -69,6 +74,7 @@ fun AttractionScreen(
     val reviews by viewModel.reviews.collectAsStateWithLifecycle()
     val photoUrls by viewModel.photoUrls.collectAsStateWithLifecycle()
     val ledger by viewModel.ledger.collectAsStateWithLifecycle()
+    val details by viewModel.details.collectAsStateWithLifecycle()
     val c = FindoutTheme.colors
     val context = LocalContext.current
 
@@ -151,15 +157,18 @@ fun AttractionScreen(
                 }
             }
 
-            // Coordinates + taste-profile note
-            Row(Modifier.padding(start = 22.dp, end = 22.dp, top = 16.dp, bottom = 6.dp)) {
-                Box(Modifier.width(2.dp).height(40.dp).background(c.accent2))
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    "%.5f, %.5f · weighting from your taste profile.".format(loc.latitude, loc.longitude),
-                    style = FindoutType.bodyItalic.copy(fontSize = 15.sp),
-                    color = c.sub
-                )
+            // Street address (resolved from Google on open; hidden until available / if unknown)
+            val address = details?.address
+            if (!address.isNullOrBlank()) {
+                Row(Modifier.padding(start = 22.dp, end = 22.dp, top = 16.dp, bottom = 6.dp)) {
+                    Box(Modifier.width(2.dp).height(40.dp).background(c.accent2))
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        address,
+                        style = FindoutType.bodyItalic.copy(fontSize = 15.sp),
+                        color = c.sub
+                    )
+                }
             }
 
             // Amenities (compact)
@@ -172,6 +181,43 @@ fun AttractionScreen(
                 color = c.faint,
                 modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 6.dp, bottom = 18.dp)
             )
+
+            // Opening hours + live open-now status (hidden when the venue has no hours)
+            val schedule = details?.openingHours.orEmpty()
+            if (schedule.isNotEmpty()) {
+                Hairline()
+                val now = ZonedDateTime.now(ZoneId.of("Europe/Bucharest"))
+                val badge = openStatus(schedule, now).toBadge(now)
+                Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 16.dp, bottom = 18.dp)) {
+                    Kicker("Opening Hours", color = c.faint, fontSize = 9.5.sp, letterSpacing = 1.5.sp)
+                    if (badge != null) {
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            badge.text.uppercase(),
+                            style = FindoutType.mono.copy(fontSize = 11.sp, letterSpacing = 0.5.sp),
+                            color = if (badge.open) c.sage else c.sub
+                        )
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    weeklySchedule(schedule).forEach { day ->
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 5.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                day.label.uppercase(),
+                                style = FindoutType.mono.copy(fontSize = 11.sp, letterSpacing = 1.sp),
+                                color = c.faint
+                            )
+                            Text(
+                                day.text,
+                                style = FindoutType.body.copy(fontSize = 14.sp),
+                                color = if (day.text == "Closed") c.faint else c.ink
+                            )
+                        }
+                    }
+                }
+            }
 
             Hairline()
 

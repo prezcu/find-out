@@ -1,10 +1,12 @@
 package dev.andrei.app_backend.controller;
 
 import dev.andrei.app_backend.dto.JustCoordinatesDto;
+import dev.andrei.app_backend.dto.LocationDetailsDto;
 import dev.andrei.app_backend.dto.LocationDto;
 import dev.andrei.app_backend.dto.LocationPhotosDto;
 import dev.andrei.app_backend.dto.review.ReviewDto;
 import dev.andrei.app_backend.model.User;
+import dev.andrei.app_backend.service.GooglePlacesDetailsService;
 import dev.andrei.app_backend.service.GooglePlacesPhotoService;
 import dev.andrei.app_backend.service.LocationService;
 import dev.andrei.app_backend.service.ReviewService;
@@ -28,19 +30,30 @@ public class LocationController {
     private final LocationService locationService;
     private final ReviewService reviewService;
     private final GooglePlacesPhotoService photoService;
+    private final GooglePlacesDetailsService detailsService;
 
     public LocationController(LocationService locationService,
                              ReviewService reviewService,
-                             GooglePlacesPhotoService photoService) {
+                             GooglePlacesPhotoService photoService,
+                             GooglePlacesDetailsService detailsService) {
         this.locationService = locationService;
         this.reviewService = reviewService;
         this.photoService = photoService;
+        this.detailsService = detailsService;
     }
 
     // Public: a location's reviews are viewable without signing in (like the other location reads).
     @GetMapping("/{id}/reviews")
     public ResponseEntity<List<ReviewDto>> getReviews(@PathVariable UUID id) {
         return ResponseEntity.ok(reviewService.getLocationReviews(id));
+    }
+
+    // Public: a location's street address + weekly opening hours. Resolves them from Google Place
+    // Details on first hit (Enterprise opening-hours field) and persists them, so re-opens make no
+    // Google call. Address is null / hours empty when no key is set or none were found.
+    @GetMapping("/{id}/details")
+    public ResponseEntity<LocationDetailsDto> getDetails(@PathVariable UUID id) {
+        return ResponseEntity.ok(detailsService.ensureResolvedDetails(id));
     }
 
     // Public: how many Google photos this location has. Resolves + persists them on first hit, so the

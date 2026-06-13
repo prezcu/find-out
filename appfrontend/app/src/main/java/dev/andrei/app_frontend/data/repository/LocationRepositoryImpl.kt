@@ -11,6 +11,7 @@ import dev.andrei.app_frontend.data.local.entity.LocationEntity
 import dev.andrei.app_frontend.data.remote.ApiConfig
 import dev.andrei.app_frontend.data.remote.api.ApiService
 import dev.andrei.app_frontend.data.remote.dto.JustCoordinatesDto
+import dev.andrei.app_frontend.data.remote.dto.LocationDetailsDto
 import dev.andrei.app_frontend.data.remote.dto.LocationDto
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
@@ -64,6 +65,16 @@ class LocationRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
+        }
+    }
+
+    override suspend fun getDetails(locationId: String): LocationDetailsDto? {
+        return try {
+            val response = api.getLocationDetails(locationId)
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 
