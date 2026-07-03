@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.secrets)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -103,4 +104,5 @@ dependencies {
     // The okhttp network layer follows the backend's 302 redirect to the key-less Google image URL.
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(platform("com.google.firebase:firebase-bom:34.15.0"))
 }

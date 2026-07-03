@@ -10,6 +10,7 @@ import dev.andrei.app_frontend.data.remote.api.ApiService
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -21,6 +22,13 @@ object NetworkModule {
     fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient =
         OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
+            // Backend queries hit remote Supabase (PostGIS + trigram search) and Render can
+            // cold-start, so the default 10s read timeout aborts slow-but-valid responses.
+            // Raise to 30s; callTimeout caps the whole call so it still can't hang forever.
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .callTimeout(30, TimeUnit.SECONDS)
             .build()
 
     @Provides
