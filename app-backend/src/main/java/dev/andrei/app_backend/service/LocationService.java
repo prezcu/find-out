@@ -30,10 +30,8 @@ public class LocationService {
     // Upper bound of a preference's importance; anti-weight = MAX_IMPORTANCE - importance.
     private static final int MAX_IMPORTANCE = 5;
 
-    // Keep a caller-supplied limit within sane bounds before it reaches a query / stream.
-    private static int clampLimit(int limit) {
-        return Math.min(Math.max(limit, 1), MAX_RESULT_LIMIT);
-    }
+    // Keep a clamp on the number of locations before it reaches a db query call
+    private static int clampLimit(int limit) { return Math.clamp(limit, 1, MAX_RESULT_LIMIT); }
 
     private final LocationRepository locationRepository;
     private final UserAttributePreferenceRepository preferenceRepository;
@@ -45,23 +43,29 @@ public class LocationService {
     }
 
     @Transactional(readOnly = true)
-    public List<LocationDto> getTop10CloseLocations(JustCoordinatesDto request, int limit) {
-        List<UUID> orderedIds = locationRepository.findTop10CloseLocationIds(
-                request.latitude(), request.longitude(), clampLimit(limit));
+    public List<LocationDto> getTop10CloseLocations(
+            JustCoordinatesDto request, int limit
+    ){
+
+        List<UUID> orderedIds = locationRepository
+                .findTop10CloseLocationIds(request.latitude(), request.longitude(), clampLimit(limit));
+
         if (orderedIds.isEmpty()) {
             return List.of();
         }
 
         Map<UUID, Location> byId = locationRepository
-                .findAllWithAttributesByIdIn(orderedIds)
+                .findAllWithAttributesAndConceptByIdIn(orderedIds)
                 .stream()
                 .collect(Collectors.toMap(Location::getId, l -> l));
 
-        return orderedIds.stream()
+        return orderedIds
+                .stream()
                 .map(byId::get)
                 .filter(Objects::nonNull)
                 .map(LocationMapper::toDto)
                 .toList();
+
     }
 
     /**
