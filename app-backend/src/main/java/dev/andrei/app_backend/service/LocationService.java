@@ -55,7 +55,7 @@ public class LocationService {
         }
 
         Map<UUID, Location> byId = locationRepository
-                .findAllWithAttributesAndConceptByIdIn(orderedIds)
+                .findAllWithAttributesByIdIn(orderedIds)
                 .stream()
                 .collect(Collectors.toMap(Location::getId, l -> l));
 
@@ -88,7 +88,9 @@ public class LocationService {
             return List.of();
         }
 
-        List<Location> locations = locationRepository.findAllWithAttributesAndConceptByIdIn(candidateIds);
+        // used to be findAllWithAttributesAndConceptByIdIn, byte by byte same function
+        // if something doesnt work check this
+        List<Location> locations = locationRepository.findAllWithAttributesByIdIn(candidateIds);
 
         // Fallback: no preferences -> behave like the rating-sorted nearby list.
         if (importanceByConcept.isEmpty()) {
@@ -162,7 +164,9 @@ public class LocationService {
             return List.of();
         }
 
-        List<Location> locations = locationRepository.findAllWithAttributesAndConceptByIdIn(candidateIds);
+        // used to be findAllWithAttributesAndConceptByIdIn, byte by byte same function
+        // if something doesnt work check this
+        List<Location> locations = locationRepository.findAllWithAttributesByIdIn(candidateIds);
 
         return locations.stream()
                 .filter(l -> l.getAverage_score() != null && l.getAverage_score() >= DISCOVERY_QUALITY_FLOOR)

@@ -50,18 +50,6 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
             @Param("radiusMeters") double radiusMeters
     );
 
-    // Like findAllWithAttributesByIdIn but also fetches each attribute's concept,
-    // needed to map location attributes onto the user's concept-level preferences.
-    @Query("""
-        SELECT DISTINCT l
-        FROM Location l
-        LEFT JOIN FETCH l.locationAttributes la
-        LEFT JOIN FETCH la.attribute a
-        LEFT JOIN FETCH a.concept
-        WHERE l.id IN :ids
-        """)
-    List<Location> findAllWithAttributesAndConceptByIdIn(@Param("ids") List<UUID> ids);
-
     // Step 2: hydrate locations + their attribute graph in one SELECT.
     // LEFT JOIN so locations without attributes still come back. DISTINCT
     // collapses the row multiplication caused by the one-to-many fetch.
