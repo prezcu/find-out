@@ -16,28 +16,30 @@ public final class LocationMapper {
     }
 
     public static LocationDto toDto(Location location, Double matchScore) {
-        List<AttributeDto> attributes = location.getLocationAttributes().stream()
+
+        List<AttributeDto> attributes = location.getLocationAttributes()
+                .stream()
                 .map(la -> {
                     var concept = la.getAttribute().getConcept();
                     return new AttributeDto(
-                            la.getAttribute().getName(),
-                            concept != null ? concept.getSlug() : null,
-                            la.getAverage_score());
+                        la.getAttribute().getName(),
+                        concept != null ? concept.getSlug() : null,
+                        la.getAverage_score());
                 })
                 .toList();
 
         return new LocationDto(
-                location.getId(),
-                location.getName(),
-                location.getPrimary_category(),
-                location.getPrimaryCategoryDisplayName(),
-                location.getCoordinate_point().getX(),
-                location.getCoordinate_point().getY(),
-                location.has_toilets(),
-                location.has_accessibility_features(),
-                location.getAverage_score(),
-                attributes,
-                matchScore
+          location.getId(),
+          location.getName(),
+          location.getPrimary_category(),
+          location.getPrimaryCategoryDisplayName(),
+          location.getCoordinate_point().getX(),
+          location.getCoordinate_point().getY(),
+          location.has_toilets(),
+          location.has_accessibility_features(),
+          location.getAverage_score(),
+          attributes,
+          matchScore
         );
     }
 }
