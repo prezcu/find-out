@@ -20,15 +20,41 @@ import java.util.stream.Collectors;
 public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
-    private final LocationRepository locationRepository;
     private final UserRepository userRepository;
+    private final LocationRepository locationRepository;
 
-    public WishlistService(WishlistRepository wishlistRepository,
-                           LocationRepository locationRepository,
-                           UserRepository userRepository) {
-        this.wishlistRepository = wishlistRepository;
+    /// no autowired notation because the class only has 1 constructor so it is implicitly autowired
+    WishlistService (WishlistRepository wishlistRepository, UserRepository userRepository,
+                     LocationRepository locationRepository) {
         this.locationRepository = locationRepository;
+        this.wishlistRepository = wishlistRepository;
         this.userRepository = userRepository;
+    }
+
+    @Transactional
+    public void addToWishlist(UUID userId, UUID locationId) {
+        if (!locationRepository.existsById(locationId)) {
+            throw new LocationNotFoundException();
+        }
+
+        if (wishlistRepository.existsByUser_IdAndLocation_Id(userId, locationId)) {
+            throw new AlreadyWishlistedException();
+        }
+
+        WishlistItem item = new WishlistItem();
+        item.setId(UUID.randomUUID());
+        item.setUser(userRepository.getReferenceById(userId));
+        item.setLocation(locationRepository.getReferenceById(locationId));
+        item.setCreatedAt(Instant.now());
+        wishlistRepository.save(item);
+
+
+    }
+
+    @Transactional
+    public void removeFromWishlist(UUID userId, UUID locationId) {
+        // idempotent: deleting a missing row is a no-op (controller still returns 204)
+        wishlistRepository.deleteByUser_IdAndLocation_Id(userId, locationId);
     }
 
     @Transactional(readOnly = true)
@@ -55,29 +81,6 @@ public class WishlistService {
     @Transactional(readOnly = true)
     public boolean isWishlisted(UUID userId, UUID locationId) {
         return wishlistRepository.existsByUser_IdAndLocation_Id(userId, locationId);
-    }
-
-    @Transactional
-    public void addToWishlist(UUID userId, UUID locationId) {
-        if (!locationRepository.existsById(locationId)) {
-            throw new LocationNotFoundException();
-        }
-        if (wishlistRepository.existsByUser_IdAndLocation_Id(userId, locationId)) {
-            throw new AlreadyWishlistedException();
-        }
-
-        WishlistItem item = new WishlistItem();
-        item.setId(UUID.randomUUID());
-        item.setUser(userRepository.getReferenceById(userId));
-        item.setLocation(locationRepository.getReferenceById(locationId));
-        item.setCreatedAt(Instant.now());
-        wishlistRepository.save(item);
-    }
-
-    @Transactional
-    public void removeFromWishlist(UUID userId, UUID locationId) {
-        // Idempotent: deleting a missing row is a no-op (controller still returns 204).
-        wishlistRepository.deleteByUser_IdAndLocation_Id(userId, locationId);
     }
 
     public static class LocationNotFoundException extends RuntimeException {}

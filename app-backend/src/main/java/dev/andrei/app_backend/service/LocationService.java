@@ -42,10 +42,9 @@ public class LocationService {
         this.preferenceRepository = preferenceRepository;
     }
 
+
     @Transactional(readOnly = true)
-    public List<LocationDto> getTop10CloseLocations(
-            JustCoordinatesDto request, int limit
-    ){
+    public List<LocationDto> getTop10CloseLocations(JustCoordinatesDto request, int limit) {
 
         List<UUID> orderedIds = locationRepository
                 .findTop10CloseLocationIds(request.latitude(), request.longitude(), clampLimit(limit));
@@ -113,32 +112,34 @@ public class LocationService {
     // MatchScore = sum(S_la * P_concept * W_a) / sum(P_concept * W_a) over the location's
     // rated attributes whose concept the user cares about. Undefined (no overlap) -> 0.0.
     private double computeMatchScore(Location location, Map<UUID, Integer> importanceByConcept) {
+
         if (location.getLocationAttributes() == null) {
             return 0.0;
         }
-        double weightedSum = 0.0;
-        double weightTotal = 0.0;
+
+        double weightedPreferenceSum = 0.0;
+        double weightedScoreSum = 0.0;
+
         for (LocationAttribute la : location.getLocationAttributes()) {
             Integer count = la.getScore_count();
-            Double avg = la.getAverage_score();
-            if (count == null || count == 0 || avg == null) {
-                continue; // unrated attribute
-            }
+            Double average_score = la.getAverage_score();
+            if (count == null || count == 0)
+                continue;
+            if (average_score == null)
+                continue;
             AttributeConcept concept = la.getAttribute().getConcept();
-            if (concept == null) {
-                continue; // attribute not mapped to a concept
-            }
-            int p = importanceByConcept.getOrDefault(concept.getId(), 0);
-            if (p == 0) {
-                continue; // user doesn't care about this concept
-            }
-            double w = la.getAttribute().getGlobal_weight();
-            weightedSum += avg * p * w;
-            weightTotal += p * w;
-        }
-        return weightTotal > 0 ? weightedSum / weightTotal : 0.0;
-    }
+            if (concept == null)
+                continue;
+            int importance = importanceByConcept.getOrDefault(concept.getId(), 0);
+            if ( importance == 0)
+                continue;
 
+            weightedScoreSum += average_score * importance * la.getAttribute().getGlobal_weight();
+            weightedPreferenceSum += importance * la.getAttribute().getGlobal_weight();
+        }
+
+        return weightedPreferenceSum > 0 ? weightedScoreSum / weightedPreferenceSum : 0.0;
+    }
     /**
      * Try something new: nearby, high-quality places whose strengths lie in concepts the user
      * usually <em>doesn't</em> prioritize — the inverse of getRecommendedLocations. Returns a
