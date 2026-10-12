@@ -2,7 +2,6 @@ lastconvo.txt
 HELP.md
 README.md
 target/
-src/test
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -34,3 +33,5 @@ build/
 
 ### VS Code ###
 .vscode/
+
+old-spring-tutoring-plan.txt
