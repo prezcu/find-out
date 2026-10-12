@@ -6,6 +6,7 @@ import dev.andrei.app_backend.model.WishlistItem;
 import dev.andrei.app_backend.repository.LocationRepository;
 import dev.andrei.app_backend.repository.UserRepository;
 import dev.andrei.app_backend.repository.WishlistRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,8 +47,12 @@ public class WishlistService {
         item.setUser(userRepository.getReferenceById(userId));
         item.setLocation(locationRepository.getReferenceById(locationId));
         item.setCreatedAt(Instant.now());
-        wishlistRepository.save(item);
 
+        try {
+            wishlistRepository.saveAndFlush(item);
+        } catch (DataIntegrityViolationException e) {
+            throw new AlreadyWishlistedException();
+        }
 
     }
 
